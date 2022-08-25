@@ -1,0 +1,76 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.1622
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Samurai", "Samurai.vcxproj", "{5A783A7F-2363-4B53-8C8C-71BF003D0B89}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SamuraiConsole", "SamuraiConsole\SamuraiConsole.vcxproj", "{1F13736D-E844-483F-89E6-E4455C41B776}"
+EndProject
+Global
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		DLL Debug|x64 = DLL Debug|x64
+		DLL Debug|x86 = DLL Debug|x86
+		DLL Release|x64 = DLL Release|x64
+		DLL Release|x86 = DLL Release|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5A783A7F-2363-4B53-8C8C-71BF003D0B89}.Debug|x64.ActiveCfg = Debug|x64
+		{5A783A7F-2363-4B53-8C8C-71BF003D0B89}.Debug|x64.Build.0 = Debug|x64
+		{5A783A7F-2363-4B53-8C8C-71BF003D0B89}.Debug|x86.ActiveCfg = Debug|Win32
+		{5A783A7F-2363-4B53-8C8C-71BF003D0B89}.Debug|x86.Build.0 = Debug|Win32
+		{5A783A7F-2363-4B53-8C8C-71BF003D0B89}.DLL Debug|x64.ActiveCfg = Debug|x64
+		{5A783A7F-2363-4B53-8C8C-71BF003D0B89}.DLL Debug|x64.Build.0 = Debug|x64
+		{5A783A7F-2363-4B53-8C8C-71BF003D0B89}.DLL Debug|x86.ActiveCfg = Debug|Win32
+		{5A783A7F-2363-4B53-8C8C-71BF003D0B89}.DLL Debug|x86.Build.0 = Debug|Win32
+		{5A783A7F-2363-4B53-8C8C-71BF003D0B89}.DLL Release|x64.ActiveCfg = Release|x64
+		{5A783A7F-2363-4B53-8C8C-71BF003D0B89}.DLL Release|x64.Build.0 = Release|x64
+		{5A783A7F-2363-4B53-8C8C-71BF003D0B89}.DLL Release|x86.ActiveCfg = Release|Win32
+		{5A783A7F-2363-4B53-8C8C-71BF003D0B89}.DLL Release|x86.Build.0 = Release|Win32
+		{5A783A7F-2363-4B53-8C8C-71BF003D0B89}.Release|x64.ActiveCfg = Release|x64
+		{5A783A7F-2363-4B53-8C8C-71BF003D0B89}.Release|x64.Build.0 = Release|x64
+		{5A783A7F-2363-4B53-8C8C-71BF003D0B89}.Release|x86.ActiveCfg = Release|Win32
+		{5A783A7F-2363-4B53-8C8C-71BF003D0B89}.Release|x86.Build.0 = Release|Win32
+		{1F13736D-E844-483F-89E6-E4455C41B776}.Debug|x64.ActiveCfg = Debug|x64
+		{1F13736D-E844-483F-89E6-E4455C41B776}.Debug|x64.Build.0 = Debug|x64
+		{1F13736D-E844-483F-89E6-E4455C41B776}.Debug|x86.ActiveCfg = Debug|Win32
+		{1F13736D-E844-483F-89E6-E4455C41B776}.Debug|x86.Build.0 = Debug|Win32
+		{1F13736D-E844-483F-89E6-E4455C41B776}.DLL Debug|x64.ActiveCfg = Debug|x64
+		{1F13736D-E844-483F-89E6-E4455C41B776}.DLL Debug|x64.Build.0 = Debug|x64
+		{1F13736D-E844-483F-89E6-E4455C41B776}.DLL Debug|x86.ActiveCfg = Debug|Win32
+		{1F13736D-E844-483F-89E6-E4455C41B776}.DLL Debug|x86.Build.0 = Debug|Win32
+		{1F13736D-E844-483F-89E6-E4455C41B776}.DLL Release|x64.ActiveCfg = Release|x64
+		{1F13736D-E844-483F-89E6-E4455C41B776}.DLL Release|x64.Build.0 = Release|x64
+		{1F13736D-E844-483F-89E6-E4455C41B776}.DLL Release|x86.ActiveCfg = Release|Win32
+		{1F13736D-E844-483F-89E6-E4455C41B776}.DLL Release|x86.Build.0 = Release|Win32
+		{1F13736D-E844-483F-89E6-E4455C41B776}.Release|x64.ActiveCfg = Release|x64
+		{1F13736D-E844-483F-89E6-E4455C41B776}.Release|x64.Build.0 = Release|x64
+		{1F13736D-E844-483F-89E6-E4455C41B776}.Release|x86.ActiveCfg = Release|Win32
+		{1F13736D-E844-483F-89E6-E4455C41B776}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B387C22A-6EA7-4736-8126-54525DCAEB54}
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
+	EndGlobalSection
+EndGlobal

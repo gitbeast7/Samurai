@@ -12,9 +12,9 @@ Note: If you're only using the application you can simply drop the executable wh
 A single .xml file will be created the first time you run the application. This simply stores configuration
 parameter values so subsequent launches will be initialized to the last user settings.
 If the configuration file is removed or can't be written a default configuration is used on each launch.
-*** Using the application *** 
+# Using the application 
 
-There is a user manual that accompanies this distribution.
+A user manual accompanies this distribution.
 
 # Using the MultiCube class 
 There is an example in the SamuraiConsole directory which demonstrates how the MultiCube class can be used

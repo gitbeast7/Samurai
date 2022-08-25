@@ -33,5 +33,7 @@ Connected Components 3D: https://github.com/seung-lab/connected-components-3d
 
 Robinhood Hashing: https://github.com/martinus/robin-hood-hashing
 
+WxWidgets 3.2.0: https://github.com/wxWidgets/wxWidgets/releases/tag/v3.2.0
+
 # License
 Licensed under the MIT License.

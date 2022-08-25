@@ -18,6 +18,33 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\ControlsPanel.cpp" />
+    <ClCompile Include="..\src\FrameStatusBar.cpp" />
+    <ClCompile Include="..\src\GLDisplay.cpp" />
+    <ClCompile Include="..\src\HistWindow.cpp" />
+    <ClCompile Include="..\src\MultiCube.cpp" />
+    <ClCompile Include="..\src\PlotWindow.cpp" />
+    <ClCompile Include="..\src\PortCriticalSection.cpp" />
+    <ClCompile Include="..\src\ProcThread.cpp" />
+    <ClCompile Include="..\src\Samurai.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\include\cc3d.hpp" />
+    <ClInclude Include="..\include\ControlsPanel.h" />
+    <ClInclude Include="..\include\FrameStatusBar.h" />
+    <ClInclude Include="..\include\GLDisplay.h" />
+    <ClInclude Include="..\include\HistWindow.h" />
+    <ClInclude Include="..\include\MultiCube.h" />
+    <ClInclude Include="..\include\PlotWindow.h" />
+    <ClInclude Include="..\include\PortCriticalSection.h" />
+    <ClInclude Include="..\include\ProcThread.h" />
+    <ClInclude Include="..\include\robin_hood.h" />
+    <ClInclude Include="..\include\Samurai.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Samurai.rc" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{5A783A7F-2363-4B53-8C8C-71BF003D0B89}</ProjectGuid>
@@ -107,7 +134,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>HAS_WXWIDGETS;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(THIRD_PARTY_ROOTDIR)\$(WXWIN)\include;$(THIRD_PARTY_ROOTDIR)\$(WXWIN)\include\msvc;$(THIRD_PARTY_ROOTDIR)\$(WXWIN)\lib\vc_x64_lib\mswu</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(THIRD_PARTY_ROOTDIR)\$(WXWIN)\include;$(THIRD_PARTY_ROOTDIR)\$(WXWIN)\include\msvc;$(THIRD_PARTY_ROOTDIR)\$(WXWIN)\lib\vc_x64_lib\mswu;../include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -151,7 +178,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>HAS_WXWIDGETS;NDEBUG;WIN32;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(THIRD_PARTY_ROOTDIR)\$(WXWIN)\include;$(THIRD_PARTY_ROOTDIR)\$(WXWIN)\include\msvc;$(THIRD_PARTY_ROOTDIR)\$(WXWIN)\lib\vc_x64_lib\mswu</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(THIRD_PARTY_ROOTDIR)\$(WXWIN)\include;$(THIRD_PARTY_ROOTDIR)\$(WXWIN)\include\msvc;$(THIRD_PARTY_ROOTDIR)\$(WXWIN)\lib\vc_x64_lib\mswu;../include</AdditionalIncludeDirectories>
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -172,33 +199,6 @@
       <LinkTimeCodeGeneration>UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="ControlsPanel.cpp" />
-    <ClCompile Include="GLDisplay.cpp" />
-    <ClCompile Include="HistWindow.cpp" />
-    <ClCompile Include="MultiCube.cpp" />
-    <ClCompile Include="PlotWindow.cpp" />
-    <ClCompile Include="Samurai.cpp" />
-    <ClCompile Include="ProcThread.cpp" />
-    <ClCompile Include="FrameStatusBar.cpp" />
-    <ClCompile Include="PortCriticalSection.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="cc3d.hpp" />
-    <ClInclude Include="ControlsPanel.h" />
-    <ClInclude Include="GLDisplay.h" />
-    <ClInclude Include="HistWindow.h" />
-    <ClInclude Include="MultiCube.h" />
-    <ClInclude Include="PlotWindow.h" />
-    <ClInclude Include="robin_hood.h" />
-    <ClInclude Include="Samurai.h" />
-    <ClInclude Include="ProcThread.h" />
-    <ClInclude Include="FrameStatusBar.h" />
-    <ClInclude Include="PortCriticalSection.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="Samurai.rc" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

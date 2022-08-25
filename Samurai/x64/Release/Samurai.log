@@ -1,0 +1,13 @@
+﻿  ControlsPanel.cpp
+  FrameStatusBar.cpp
+  GLDisplay.cpp
+  HistWindow.cpp
+  MultiCube.cpp
+  PlotWindow.cpp
+  PortCriticalSection.cpp
+  ProcThread.cpp
+  Samurai.cpp
+  Generating code
+  All 2561 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  Samurai.vcxproj -> C:\Users\beast\GitHub\Samurai\Samurai\x64\Release\Samurai.exe

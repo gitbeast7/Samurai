@@ -1,0 +1,6 @@
+﻿cl : Command line warning D9025: overriding '/sdl-' with '/GS-'
+  MultiCube.cpp
+  SamuraiConsole.cpp
+  class template optional is only available with C++17 or later.
+  Generating Code...
+  SamuraiConsole.vcxproj -> C:\Users\beast\GitHub\Samurai\Samurai\x64\Debug\SamuraiConsole.exe

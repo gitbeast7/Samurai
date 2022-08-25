@@ -1,0 +1,11 @@
+﻿  ControlsPanel.cpp
+  FrameStatusBar.cpp
+  GLDisplay.cpp
+  HistWindow.cpp
+  MultiCube.cpp
+  PlotWindow.cpp
+  PortCriticalSection.cpp
+  ProcThread.cpp
+  Samurai.cpp
+  Generating Code...
+  Samurai.vcxproj -> C:\Users\beast\GitHub\Samurai\Samurai\x64\Debug\Samurai.exe

@@ -1,0 +1,78 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{81d9ffc4-13da-49c3-b35a-f488ab0e7ac1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{4d22d27b-8e28-42ec-8fe3-b7acb132c56b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\ControlsPanel.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\FrameStatusBar.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\GLDisplay.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\HistWindow.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\MultiCube.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\PlotWindow.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\PortCriticalSection.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ProcThread.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Samurai.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\include\cc3d.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ControlsPanel.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\FrameStatusBar.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\GLDisplay.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\HistWindow.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\MultiCube.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\PlotWindow.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\PortCriticalSection.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ProcThread.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\robin_hood.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\Samurai.h">
+      <Filter>include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Samurai.rc" />
+  </ItemGroup>
+</Project>

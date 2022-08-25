@@ -5,12 +5,9 @@ VisualStudioVersion = 15.0.28307.1622
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Samurai", "Samurai.vcxproj", "{5A783A7F-2363-4B53-8C8C-71BF003D0B89}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SamuraiConsole", "SamuraiConsole\SamuraiConsole.vcxproj", "{1F13736D-E844-483F-89E6-E4455C41B776}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SamuraiConsole", "..\SamuraiConsole\SamuraiConsole.vcxproj", "{1F13736D-E844-483F-89E6-E4455C41B776}"
 EndProject
 Global
-	GlobalSection(Performance) = preSolution
-		HasPerformanceSessions = true
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
@@ -60,6 +57,9 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B387C22A-6EA7-4736-8126-54525DCAEB54}
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
 	EndGlobalSection
 	GlobalSection(Performance) = preSolution
 		HasPerformanceSessions = true

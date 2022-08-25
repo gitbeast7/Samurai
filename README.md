@@ -28,7 +28,7 @@ size histogram and fragment animation.
 
 The second provides functionality for inputing designer objects. It accepts objects defined by their x,y,z positions.
 
-# External Sources Used 
+# External Sources 
 Connected Components 3D: https://github.com/seung-lab/connected-components-3d
 
 Robinhood Hashing: https://github.com/martinus/robin-hood-hashing

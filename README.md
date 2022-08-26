@@ -12,7 +12,7 @@ The application is a Windows 64-bit executable.
 
 Note: If you're only using the application you can simply drop the executable wherever you like.
 A single .xml file will be created the first time you run the application. This simply stores configuration
-parameter values so subsequent launches will be initialized to the last user settings.
+parameter values so subsequent launches will be initialized to the most recent user settings.
 If the configuration file is removed or can't be written a default configuration is used on each launch.
 # Using the application 
 

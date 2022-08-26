@@ -16,7 +16,7 @@ parameter values so subsequent launches will be initialized to the last user set
 If the configuration file is removed or can't be written a default configuration is used on each launch.
 # Using the application 
 
-A user manual accompanies this distribution.
+A [user manual](https://github.com/gitbeast7/Samurai/blob/main/SAMURAI_1.0/SAMURAI%20Reference%20Manual.pdf) accompanies this distribution.
 
 # Using the MultiCube class 
 There is an example in the SamuraiConsole directory which demonstrates how the MultiCube class can be used

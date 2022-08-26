@@ -1,0 +1,15 @@
+
+*.obj
+*.db
+*.log
+*.tlog
+*.pdb
+*.ilk
+*.res
+*.db-wal
+*.db-shm
+*.opendb
+*.iobj
+*.ipdb
+*.idb
+*.suo

@@ -2,9 +2,8 @@
 SAMURAI (Surface Area Modelling Using Rubik As Inspiration) version 1.0 is a model that
 simulates the progressive degradation of individual detritus particles that are represented as a
 matrix of aligned sub-units akin to the well-known Rubik cube. The seminal publication is:
-Anderson, T.R., Gentleman, W.C., Cael, B.B., Hirschi, J.M. and Mayor, D.J. (2022).
-Modelling surface area as a dynamic regulator of particle remineralisation in the ocean.
-Journal of Theoretical Biology *** [vol, pp., doi.]
+
+Anderson, T.R., Gentleman, W.C., Cael, B.B., Hirschi, J.M., Eastwood, R.L. and Mayor, D.J. (2022). Modelling surface area as a dynamic regulator of particle remineralisation in the ocean. Journal of Theoretical Biology *** [vol, pp., doi.]
 # Installation and Usage
 The application is a Windows 64-bit executable.
 

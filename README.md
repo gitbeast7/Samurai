@@ -36,4 +36,4 @@ Robinhood Hashing: https://github.com/martinus/robin-hood-hashing
 WxWidgets 3.2.0: https://github.com/wxWidgets/wxWidgets/releases/tag/v3.2.0
 
 # License
-Licensed under the MIT License.
+Licensed under the MIT [License](https://github.com/gitbeast7/Samurai/blob/main/LICENSE).

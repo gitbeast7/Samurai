@@ -190,6 +190,7 @@ ControlsPanel::ControlsPanel(wxWindow* win) : wxPanel(win, wxID_ANY, wxDefaultPo
 
 	Bind(wxEVT_BUTTON,				&ControlsPanel::OnButton, this);
 	Bind(wxEVT_TEXT_ENTER,			&ControlsPanel::OnTextEnter, this);
+	Bind(wxEVT_TEXT,				&ControlsPanel::OnText, this);
 	Bind(wxEVT_RADIOBUTTON,			&ControlsPanel::OnRadioButton, this);
 	Bind(wxEVT_CHECKBOX,			&ControlsPanel::OnCheckBox,	this);
 	Bind(wxEVT_THREAD_STATE_EVENT,	&ControlsPanel::OnThreadState, this);
@@ -771,6 +772,11 @@ void ControlsPanel::OnPageChanged(wxBookCtrlEvent& event)
 	refreshDisplay(true);
 
 	event.Skip();
+}
+
+void ControlsPanel::OnText(wxCommandEvent& event)
+{
+	m_need_prerun = true;
 }
 
 void ControlsPanel::OnTextEnter(wxCommandEvent& event)

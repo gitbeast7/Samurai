@@ -47,6 +47,7 @@ public:
 private:
 	void OnButton(wxCommandEvent& event);
 	void OnTextEnter(wxCommandEvent& event);
+	void OnText(wxCommandEvent& event);
 	void OnRadioButton(wxCommandEvent& event);
 	void OnCheckBox(wxCommandEvent& event);
 	void OnThreadState(wxCommandEvent& event);

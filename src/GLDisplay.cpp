@@ -224,8 +224,8 @@ bool GLDisplayContext3D::DrawCubes(MultiCube* grid, CubeParams& params, CubePtrs
 		}
 
 		DrawCube(cube->info, x-xoff, y-yoff, z-zoff);
-		if ((z - zoff) > zoff)
-			z = zoff;
+		//if ((z - zoff) > zoff)
+		//	z = zoff;
 	}
 
 	glBindTexture(GL_TEXTURE_2D, 0);

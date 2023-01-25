@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <chrono>
 #include <iostream>
+#include <windows.h>
 
 #include "cxxopts.hpp"	// Used to parse command line options
 
@@ -194,6 +195,11 @@ void run(CubeParams& params)
 
 int main(int argc, const char* argv[])
 {
+	if (!SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS))
+	{
+		fprintf(stderr, "Couldn't set priority %d\n", ABOVE_NORMAL_PRIORITY_CLASS);
+	}
+
 	CubeParams params;
 	
 	MultiCube::loadDefaults(params);	// Set default parameters

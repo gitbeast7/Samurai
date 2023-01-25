@@ -36,7 +36,7 @@ class GLDisplayCanvas;
 
 // Conditional Compilation
 //#define WANT_FRAGMENTATION	// Uncomment for fragmentation detection
-#define WANT_INPUT_CONTROL	// Uncomment for importing designer objects (experimental)
+//#define WANT_INPUT_CONTROL	// Uncomment for importing designer objects (experimental)
 //#define RANDOM_REMOVAL		// Uncomment for naive removal support (can remove regardless of surface exposure)
 //#define USE_CUBE_MAP			// Uncomment for cube map use (instead of fixed array)
 

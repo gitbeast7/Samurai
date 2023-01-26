@@ -144,6 +144,7 @@ private:
 	bool			m_terminating;
 	bool			m_paused;
 	bool			m_consuming;	// Flag; indicates that the cube consuming process is running
+	bool			m_param_changed;
 	int				m_run_count;
 
 	GLDisplayCanvas* mGLCanvas;

@@ -120,6 +120,7 @@ ControlsPanel::ControlsPanel(wxWindow* win) : wxPanel(win, wxID_ANY, wxDefaultPo
 	m_need_prerun = true;
 	m_terminating = false;
 	m_consuming = false;
+	m_param_changed = false;
 	m_run_count = 0;
 	m_ellipse_scalar = std::cbrt(6.0 / M_PI);
 
@@ -776,11 +777,18 @@ void ControlsPanel::OnPageChanged(wxBookCtrlEvent& event)
 
 void ControlsPanel::OnText(wxCommandEvent& event)
 {
-	m_need_prerun = true;
+	wxTextCtrl* textCtrl = (wxTextCtrl*)event.GetEventObject();
+	if ((textCtrl == m_xdim) || (textCtrl == m_ydim) || (textCtrl == m_zdim) ||
+		(textCtrl == m_porosity) || (textCtrl == m_poreSize))
+	{
+		m_param_changed = true;
+	}
 }
 
 void ControlsPanel::OnTextEnter(wxCommandEvent& event)
 {
+	m_param_changed = false;	// Reset flag. We'll commit any change that might have been made here
+
 	wxTextCtrl* textCtrl = (wxTextCtrl*)event.GetEventObject();
 	if ((textCtrl == m_rotationAngle) || (textCtrl == m_fps))
 	{
@@ -906,6 +914,11 @@ void ControlsPanel::OnButton(wxCommandEvent& event)
 		{
 			saveConfig();
 			button->SetLabel("pause");
+			if (m_param_changed)
+			{
+				m_param_changed = false;	// reset the flag
+				m_need_prerun = true;		// make sure we reconfig the multicube using the modified params before running
+			}
 			m_thread = new ProcThread(this);	// Launch the thread
 		}
 		else

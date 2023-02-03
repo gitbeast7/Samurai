@@ -615,11 +615,11 @@ void ControlsPanel::rescale(bool isCuboid)
 
 void ControlsPanel::refreshDisplay(bool force/*=false*/)
 {
-	if (!(m_params.displayEnable || force) || m_terminating)
-		return;
-
 	if (m_grid)
 		m_grid->m_params = m_params;
+
+	if (!(m_params.displayEnable || force) || m_terminating)
+		return;
 
 	if (mGLCanvas->IsShownOnScreen())
 	{
@@ -912,6 +912,7 @@ void ControlsPanel::OnButton(wxCommandEvent& event)
 	{
 		if (m_done)
 		{
+			//updateSampling();
 			saveConfig();
 			button->SetLabel("pause");
 			if (m_param_changed)
@@ -1569,6 +1570,7 @@ bool ControlsPanel::prerun(bool is_prerun)
 	{
 		m_runButton->SetLabel("pause");
 		generatePores();
+		updateSampling();
 	}
 
 	if (is_prerun)

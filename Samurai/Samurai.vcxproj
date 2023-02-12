@@ -194,7 +194,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(THIRD_PARTY_ROOTDIR)\$(WXWIN)\lib\vc_x64_lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>wxbase$(WXID)u.lib;wxmsw$(WXID)u_core.lib;wxzlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>wxbase$(WXID)u.lib;wxmsw$(WXID)u_core.lib;wxzlib.lib;wxjpeg.lib;wxtiff.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Profile>true</Profile>
       <LinkTimeCodeGeneration>UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>

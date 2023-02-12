@@ -81,6 +81,10 @@ struct CubeParams
 	bool	naiveRemoval;
 #endif //#ifdef RANDOM_REMOVAL
 
+	bool	aggregateEnable;
+	unsigned long particleSize;
+	double	fractalDim;
+
 		// Data Output Control
 	double	outputInc;
 	double	outputEnd;
@@ -149,11 +153,16 @@ struct Cube
 #endif //#ifdef WANT_FRAGMENTATION
 };
 
-#ifdef WANT_INPUT_CONTROL
+//#ifdef WANT_INPUT_CONTROL
+
 struct point3d {
 	double x, y, z;
+	int nNeighbors;
 };
-#endif //#ifdef WANT_INPUT_CONTROL
+
+typedef std::vector<point3d> pointVect;
+
+//#endif //#ifdef WANT_INPUT_CONTROL
 
 #ifdef WANT_FRAGMENTATION
 struct Fragment
@@ -212,6 +221,9 @@ public:
 	bool consume(double& threshhold, int* progress=NULL);
 	bool producePores(double& threshhold, int* progress);
 	void finishPores();	// Free up pore data
+
+	bool produceParticles(double& threshhold, int* progress);
+	int getParticleCount() { return((int)m_aggPoints.size()); }
 
 	// I/O
 	bool openInfo(char* filename);
@@ -358,6 +370,8 @@ private:
 	VectorMap				fragments;		// Fragment list. (Stores vectors of cubes mapped by fragment id)
 	std::vector<uint32_t>	fragmentSizes;
 
+	pointVect				m_aggPoints;
+
 #ifdef WANT_FRAGMENTATION
 	FragmentMap			fragMap;		// List of fragment attributes
 
@@ -370,3 +384,27 @@ private:
 #endif //#ifdef WANT_FRAGMENTATION
 };
 
+class Aggregate
+{
+public:
+	Aggregate(bool isCuboid, double xd, double yd, double zd, double pd, double fd);
+
+	pointVect&	getParticles() { return(m_points); }
+	void generateParticles(bool verbose=true);
+	void fractalGeneration(pointVect& displayPoints, point3d cOffset, double xd, double yd, double zd, double pd, double fd, double& pSize);
+
+private:
+	point3d generateParticle();
+	bool validateParticle(point3d p, double pMag);
+
+	double		m_containerVolume;
+	double		m_particleVolume;
+
+	bool		m_isCuboid;
+	double		m_xd, m_yd, m_zd;
+	double		m_xr, m_yr, m_zr;
+	double		m_pd, m_pr;
+	double		m_fd;
+	pointVect	m_points;
+	uint64_t	m_expected;
+};

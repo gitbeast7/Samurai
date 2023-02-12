@@ -124,6 +124,9 @@ void MultiCube::loadDefaults(CubeParams& params)
 #ifdef RANDOM_REMOVAL
 	params.naiveRemoval = false;
 #endif //#ifdef RANDOM_REMOVAL
+	params.aggregateEnable = true;
+	params.particleSize = 20;
+	params.fractalDim	= 0.0;
 	params.outputInc	= 0.05;
 	params.outputSubsamp= 1;
 	params.outputNSamps = 0;
@@ -183,23 +186,72 @@ void MultiCube::initialize()
 	}
 }
 
+int NCollisions = 0;
+
 // Perform any preprocessing before the consume process.
 void MultiCube::preprocess(char* fname)
 {
-#ifdef WANT_INPUT_CONTROL
-	if (fname)	// If an import file was provided load a designer object
+	if (m_params.aggregateEnable)
 	{
-		importObject(fname);
+		NCollisions = 0;
+
+		double fdim = m_params.fractalDim;
+		double xdim = m_params.xdim;
+		double ydim = m_params.ydim;
+		double zdim = m_params.zdim;
+		double pdim = m_params.particleSize;
+
+		Aggregate aggregate(m_params.cuboid, xdim, ydim, zdim, pdim, fdim);
+		pointVect points;
+		point3d cOffset;
+		cOffset.x = 0;
+		cOffset.y = 0;
+		cOffset.z = 0;
+		if (fdim != 0)
+		{
+			double pSize = pdim;
+			aggregate.fractalGeneration(points, cOffset, xdim, ydim, zdim, pdim, fdim, pSize);
+			pdim = pSize;
+		}
+		else
+		{
+			aggregate.generateParticles();
+			points = aggregate.getParticles();
+		}
+		pointVect::iterator it = points.begin();
+		while (it != points.end())
+		{
+			point3d& p = *it++;
+			int x0 = (int)(p.x);
+			int y0 = (int)(p.y);
+			int z0 = (int)(p.z);
+			generateEllipsoid(x0, y0, z0, (int)pdim, (int)pdim, (int)pdim);
+			//break;
+		}
+		//detectFragments(true);
+		std::string message = format("Number of Collisions %d\n", NCollisions);
+		sendMessage(message);
 	}
 	else 
+	{
+#ifdef WANT_INPUT_CONTROL
+		if (fname)	// If an import file was provided load a designer object
+		{
+			importObject(fname);
+		}
+		else
 #endif //#ifdef WANT_INPUT_CONTROL
-	if (m_params.cuboid)	// rectangular solid
-		generateCuboid();	
-	else					// ellipsoid
-	{	int x0 = (int)round((double)m_params.xdim/2.0);
-		int y0 = (int)round((double)m_params.ydim/2.0);
-		int z0 = (int)round((double)m_params.zdim/2.0);
-		generateEllipsoid(x0, y0, z0, m_params.xdim, m_params.ydim, m_params.zdim);	// Ellipsoidal solid
+		{
+			if (m_params.cuboid)	// rectangular solid
+				generateCuboid();
+			else					// ellipsoid
+			{
+				int x0 = (int)round((double)m_params.xdim / 2.0);
+				int y0 = (int)round((double)m_params.ydim / 2.0);
+				int z0 = (int)round((double)m_params.zdim / 2.0);
+				generateEllipsoid(x0, y0, z0, m_params.xdim, m_params.ydim, m_params.zdim);	// Ellipsoidal solid
+			}
+		}
 	}
 
 	initExposedFaceMap();	// Put all exposed faces on the exposed face map
@@ -672,10 +724,18 @@ void MultiCube::insertFace(Cube* cube, int face, Cube* adjCube, bool doUpdate)
 // be affected by the insert are adjusted.
 void MultiCube::insertCube(int x, int y, int z, bool doUpdate/*=false*/)
 {
+	if ((x < 0) || (y < 0) || (z < 0))
+		return;
+	if ((x >= m_params.xdim) || (y >= m_params.ydim) || (z >= m_params.zdim))
+		return;
+
 	Cube* cube = getCube(x, y, z);
 
 	if (visible(cube->info))
+	{
+		NCollisions++;
 		return;	// Already visible in the grid - nothing to do
+	}
 
 	show(cube->info);	// Make cube visible in the grid
 	Cube* adjCube = NULL;
@@ -2014,4 +2074,250 @@ std::string format(const char *fmt, ...)
 	}
 
 	return retStr;
+}
+
+bool MultiCube::produceParticles(double& threshhold, int* progress)
+{
+	Dim_t cubesToRemove = (Dim_t)round(m_initialVolume * m_params.porosity);
+	int poreSize = getPoreSize(cubesToRemove);	// Get initial pore dimensions
+	m_cubesRemoved = m_initialVolume - (Dim_t)cubeList.size();
+	while ((m_cubesRemoved < cubesToRemove) && !testDone())
+	{
+		m_cubesRemoved = m_initialVolume - (Dim_t)cubeList.size();
+		double ratio_removed = (double)m_cubesRemoved / (double)cubesToRemove;
+		if (ratio_removed >= threshhold)
+		{
+			// In cases where more cubes are removed than what would occur
+			// during the next threshhold we adjust the threshhold to the 
+			// next increment.
+			if (ratio_removed > threshhold)
+			{
+				while (ratio_removed > threshhold)
+					threshhold += POROSITY_PROCESSING_INC;
+				threshhold -= POROSITY_PROCESSING_INC;
+			}
+			if (progress)
+				*progress = (int)round(ratio_removed * 100.0);
+
+			return(true);
+		}
+	}
+
+	if (progress)
+		*progress = (int)round(((double)m_cubesRemoved / (double)cubesToRemove)*100.0);
+
+	return(false);	// All particles have been "produced"
+}
+
+#define MAX_MISSES		(100)
+#define FILL_PERCENT	(0.35)
+#define SPHERE_SCALAR	((4.0 / 3.0) * 3.141592635)
+#define MAX_NEIGHBORS	(12)
+
+Aggregate::Aggregate(bool isCuboid, double xd, double yd, double zd, double pd, double fd) : m_isCuboid(isCuboid), m_xd(xd), m_yd(yd), m_zd(zd), m_pd(pd), m_fd(fd)
+{
+	// Get radii for convenience
+	m_xr = m_xd / 2;
+	m_yr = m_yd / 2;
+	m_zr = m_zd / 2;
+	m_pr = m_pd / 2;
+
+	// Create an initial point at the center of the container offset by the radius of the particle
+	double pAdj = 0;
+	int ipd = (int)m_pd;
+	if (ipd % 2)
+		pAdj = .5;
+
+	point3d p;
+	p.x = m_xr + pAdj;
+	p.y = m_yr + pAdj;
+	p.z = m_zr + pAdj;
+
+	p.nNeighbors = 0;
+	m_points.push_back(p);
+
+	if (m_isCuboid)
+		m_containerVolume = m_xd * m_yd * m_zd;
+	else
+		m_containerVolume = SPHERE_SCALAR * (m_xr * m_yr * m_zr);
+	m_particleVolume = SPHERE_SCALAR * (m_pr * m_pr * m_pr);
+	m_expected = (uint64_t)((m_containerVolume / m_particleVolume) * FILL_PERCENT);
+}
+
+void Aggregate::generateParticles(bool verbose/*=true*/)
+{
+	if (verbose)
+	{
+		std::string message = format("Generating Aggregate: Container Volume %g Particle Volume %g\n", m_containerVolume, m_particleVolume);
+		sendMessage(message);
+	}
+
+	double pMag = m_xr - m_pr;
+
+	uint64_t nMisses = 0;
+	while ((m_points.size() < m_expected) && (nMisses < MAX_MISSES))
+	{
+		point3d p = generateParticle();
+		p.nNeighbors = 0;
+		if (validateParticle(p, pMag))
+		{
+			int nPoints = (int)m_points.size();
+			// Update the neighbor fields of the new particle and its neighbors
+			for (int index = 0; index < nPoints; index++)
+			{
+				// Get a particle center off the list
+				// Compute the distance to the new particle center
+				point3d& c = m_points[index];
+				double xdiff = c.x - p.x;
+				double ydiff = c.y - p.y;
+				double zdiff = c.z - p.z;
+				double mag = sqrt(xdiff * xdiff + ydiff * ydiff + zdiff * zdiff);
+				// Count the new particle's neighbors
+				if (mag < (m_pd + m_pr))
+				{
+					++p.nNeighbors;
+					++c.nNeighbors;
+				}
+			}
+			m_points.push_back(p);
+
+			nMisses = 0;
+		}
+		else
+			++nMisses;	// debug break point location
+	}
+
+	if (verbose)
+	{
+		std::string message = format("Finished: Expected %d Created %d\n", m_expected, m_points.size());
+		sendMessage(message);
+	}
+}
+
+point3d Aggregate::generateParticle()
+{
+	// Pick an existing point from the list (the center of a sub-particle)
+	int index = (int)(xrand() * m_points.size());
+	point3d c = m_points[index];
+	while (c.nNeighbors >= MAX_NEIGHBORS)
+	{
+		index = (int)(xrand() * m_points.size());
+		c = m_points[index];
+	}
+
+	// Create a random point somewhere in the volume
+	point3d p;
+	p.x = xrand() * m_xd;
+	p.y = xrand() * m_yd;
+	p.z = xrand() * m_zd;
+
+	// Create a vector from selected point to random point
+	point3d np;
+	np.x = c.x - p.x;
+	np.y = c.y - p.y;
+	np.z = c.z - p.z;
+	double mag = sqrt((np.x * np.x) + (np.y * np.y) + (np.z * np.z));
+
+	// Normalize and scale the vector and add the components to the existing point creating the new sub-particles center point
+	np.x = c.x + (m_pd * (np.x / mag));
+	np.y = c.y + (m_pd * (np.y / mag));
+	np.z = c.z + (m_pd * (np.z / mag));
+
+	return(np);
+}
+
+bool Aggregate::validateParticle(point3d p, double pMag)
+{
+	bool condition;
+	// Verify that the particle will be within the volume of the container
+	if (m_isCuboid)
+	{
+		condition = (
+			((p.x >= m_pr) && (p.x <= (m_xd - m_pr))) &&
+			((p.y >= m_pr) && (p.y <= (m_yd - m_pr))) &&
+			((p.z >= m_pr) && (p.z <= (m_zd - m_pr))));
+	}
+	else
+	{
+		// Create a vector from container center to test point
+		point3d np;
+		np.x = m_xr - p.x;
+		np.y = m_yr - p.y;
+		np.z = m_zr - p.z;
+		double mag = sqrt((np.x * np.x) + (np.y * np.y) + (np.z * np.z));
+
+		// Normalize and scale the vector to determine where this sub-particle might intersect the container
+		//double pAdj = m_pr;
+		//np.x = ((m_xr - pAdj) * (np.x / mag));
+		//np.y = ((m_yr - pAdj) * (np.y / mag));
+		//np.z = ((m_zr - pAdj) * (np.z / mag));
+		//double cmag = sqrt((np.x * np.x) + (np.y * np.y) + (np.z * np.z));
+
+		condition = (mag < pMag);	// Verify that the sub-particle will fit inside the container
+	}
+
+	if (condition)
+	{
+		// Verify the new particle doesn't overlap with any existing particles
+		pointVect::iterator it = m_points.begin();
+		while (it != m_points.end())
+		{
+			// Get a particle center off the list
+			// Compute the distance to the new particle center
+			point3d& c = *it++;
+			double xdiff = c.x - p.x;
+			double ydiff = c.y - p.y;
+			double zdiff = c.z - p.z;
+			double mag = sqrt(xdiff * xdiff + ydiff * ydiff + zdiff * zdiff);
+			if (mag < m_pd)	// The new particle would overlap an existing one (Fail!!)
+				return(false);
+			mag = mag;
+		}
+		return(true);	// Success!!
+	}
+
+	return(false);
+}
+
+void Aggregate::fractalGeneration(pointVect& displayPoints, point3d cOffset, double xd, double yd, double zd, double pd, double fd, double& pSize)
+{
+	Aggregate aggregate(m_isCuboid, xd, yd, zd, pd, fd);
+	aggregate.generateParticles(false);
+	pointVect& points = aggregate.getParticles();
+
+	if (pd > fd)
+	{
+		xd /= fd; yd /= fd; zd /= fd; pd /= fd;
+		double xr = xd / 2.0;
+		double yr = yd / 2.0;
+		double zr = zd / 2.0;
+		double pr = pd / 2.0;
+
+		//int nParticles = 0;
+		pointVect::iterator it = points.begin();
+		while (it != points.end())
+		{
+			point3d& c = *it++;
+			point3d p = cOffset;
+			p.x += c.x - xr;
+			p.y += c.y - yr;
+			p.z += c.z - zr;
+			fractalGeneration(displayPoints, p, xd, yd, zd, pd, fd, pSize);
+			//if (++nParticles > 1)
+			//	break;
+		}
+	}
+	else
+	{
+		pointVect::iterator it = points.begin();
+		while (it != points.end())
+		{
+			point3d& p = *it++;
+			p.x += cOffset.x;
+			p.y += cOffset.y;
+			p.z += cOffset.z;
+			displayPoints.push_back(p);
+		}
+		pSize = pd;
+	}
 }

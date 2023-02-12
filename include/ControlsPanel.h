@@ -35,6 +35,7 @@ public:
 
 	void run(bool is_prerun);
 	void generatePores();
+	void generateAggregate();
 
 	bool saveConfig();
 	void refreshDisplay(bool force=false);
@@ -88,6 +89,8 @@ private:
 	wxTextCtrl*		m_zdim;
 	wxTextCtrl*		m_porosity;
 	wxTextCtrl*		m_poreSize;
+	wxTextCtrl*		m_particleSize;
+	wxTextCtrl*		m_fractalDim;
 	wxTextCtrl*		m_outputInc;
 	wxTextCtrl*		m_outputEnd;
 	wxTextCtrl*		m_nRuns;
@@ -107,6 +110,7 @@ private:
 #ifdef RANDOM_REMOVAL
 	wxCheckBox*		m_naiveRemoval;
 #endif //#ifdef RANDOM_REMOVAL
+	wxCheckBox*		m_aggregateEnable;
 	wxCheckBox*		m_displayEnable;
 	wxCheckBox*		m_showOutlines;
 	wxCheckBox*		m_showAxes;

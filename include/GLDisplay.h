@@ -51,6 +51,7 @@ private:
 	void OnPaint(wxPaintEvent& WXUNUSED(event));
 
 	void collectFrames(wxBitmap& bitmap);
+	void getScreen(std::string fileName);
 
     wxPoint		lastpos;
 	MultiCube*	m_grid;

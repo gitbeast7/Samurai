@@ -377,6 +377,7 @@ GLDisplayCanvas::GLDisplayCanvas(wxWindow *parent)
     : wxGLCanvas(parent, wxID_ANY, NULL /* attribs */, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE | wxBORDER_SUNKEN)
 {
 	GlobalGL3dContext = Get3DContext(this);
+	//SetCurrent(*GlobalGL3dContext);
 
 		// Used to distinguish first use
 	lastpos.x = INT_MAX;	
@@ -552,8 +553,35 @@ void GLDisplayCanvas::OnPaint(wxPaintEvent& WXUNUSED(event))
 	SwapBuffers();
 }
 
+/**** START ****/
+void GLDisplayCanvas::getScreen(std::string fileName)
+{
+	const wxSize clientSize = GetClientSize();
+	int w = clientSize.x;
+	int h = clientSize.y;
+	GLubyte* imageBuf = (GLubyte*)malloc(w * h * sizeof(GLubyte) * 3);
+	glFlush();
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+	glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, imageBuf);
+	wxImage image = wxImage(w, h, (unsigned char *)imageBuf).Mirror(false);
+	image.SaveFile(fileName.c_str(), wxBITMAP_TYPE_PNG);
+}
+
+/**** END ****/
 void GLDisplayCanvas::getFrame()
 {
+	const wxSize clientSize = GetClientSize();
+	int w = clientSize.x;
+	int h = clientSize.y;
+	GLubyte* imageBuf = (GLubyte*)calloc(w * h , sizeof(GLubyte) * 3);
+	glFlush();
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+	glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, imageBuf);
+	wxImage simage = wxImage(w, h, (unsigned char *)imageBuf).Mirror(false);
+	if (simage.IsOk())
+		m_images.push_back(simage);
+	//free(imageBuf);
+	/*
 	wxClientDC dc(this);
 
 	const wxSize ClientSize = GetClientSize();
@@ -566,10 +594,15 @@ void GLDisplayCanvas::getFrame()
 	wxImage simage = bitmap.ConvertToImage();
 	if (simage.IsOk())
 		m_images.push_back(simage);
+*/
 }
 
 void GLDisplayCanvas::snap(std::string& basename)
 {
+	std::string name = format("%s%02d.png", basename.c_str(), m_snapCount++);
+	getScreen(name);
+
+/*
 	wxClientDC dc(this);
 
 	const wxSize ClientSize = GetClientSize();
@@ -579,12 +612,17 @@ void GLDisplayCanvas::snap(std::string& basename)
 	mdc.SelectObject(bitmap);
 	mdc.Blit(wxPoint(0, 0), ClientSize, &dc, wxPoint(0, 0));
 	mdc.SelectObject(wxNullBitmap);
-	wxImage simage = bitmap.ConvertToImage();
-	if (simage.IsOk())
+
+	if (bitmap.IsOk())
 	{
-		wxString name = wxString::Format("%s%02d.png", basename.c_str(), m_snapCount++);
-		simage.SaveFile(name, wxBITMAP_TYPE_PNG);
+		wxImage simage = bitmap.ConvertToImage();
+		if (simage.IsOk())
+		{
+			wxString name = wxString::Format("%s%02d.png", basename.c_str(), m_snapCount++);
+			simage.SaveFile(name, wxBITMAP_TYPE_PNG);
+		}
 	}
+*/
 }
 
 void GLDisplayCanvas::collectFrames(wxBitmap& bitmap)

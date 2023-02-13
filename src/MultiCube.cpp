@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <windows.h>
+#include <time.h>
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -59,12 +60,13 @@ double xrand()
 MultiCube::MultiCube(CubeParams& params, bool* doneFlag, char* fname/*=NULL*/) :	m_params(params), m_doneFlag(doneFlag)
 {
 	// Initialize member variables
-	m_info_fp			= NULL;		// Info output file pointer
+	m_saData_fp			= NULL;		// Info output file pointer
 	m_lastRemoved		= -1;		// Used for output data flush
 	m_initialVolume		= 0;
 	m_initialRemoved	= 0;
 	m_cubesRemoved		= 0;
 	m_maxSurfaceArea	= 0;
+	m_particlesGenerated= 0;
 	m_Cubes				= NULL;
 	m_in_labels			= NULL;
 	m_out_labels		= NULL;
@@ -126,7 +128,7 @@ void MultiCube::loadDefaults(CubeParams& params)
 #endif //#ifdef RANDOM_REMOVAL
 	params.aggregateEnable = true;
 	params.particleSize = 20;
-	params.fractalDim	= 0.0;
+	params.replaceEnable= true;
 	params.outputInc	= 0.05;
 	params.outputSubsamp= 1;
 	params.outputNSamps = 0;
@@ -195,22 +197,28 @@ void MultiCube::preprocess(char* fname)
 	{
 		NCollisions = 0;
 
-		double fdim = m_params.fractalDim;
+		int x0 = m_params.xdim / 2;
+		int y0 = m_params.ydim / 2;
+		int z0 = m_params.zdim / 2;
+		Dim_t containerVolume = generateEllipsoid(x0, y0, z0, m_params.xdim, m_params.ydim, m_params.zdim, false, true);
+		std::string message = format("Container Volume %lld\n", containerVolume);
+		sendMessage(message);
+
 		double xdim = m_params.xdim;
 		double ydim = m_params.ydim;
 		double zdim = m_params.zdim;
 		double pdim = m_params.particleSize;
 
-		Aggregate aggregate(m_params.cuboid, xdim, ydim, zdim, pdim, fdim);
+		Aggregate aggregate(m_params.cuboid, xdim, ydim, zdim, pdim);
 		pointVect points;
 		point3d cOffset;
 		cOffset.x = 0;
 		cOffset.y = 0;
 		cOffset.z = 0;
-		if (fdim != 0)
+		if (false)
 		{
 			double pSize = pdim;
-			aggregate.fractalGeneration(points, cOffset, xdim, ydim, zdim, pdim, fdim, pSize);
+			aggregate.fractalGeneration(points, cOffset, xdim, ydim, zdim, pdim, pSize);
 			pdim = pSize;
 		}
 		else
@@ -229,10 +237,12 @@ void MultiCube::preprocess(char* fname)
 			//break;
 		}
 		//detectFragments(true);
-		std::string message = format("Number of Collisions %d\n", NCollisions);
+		m_particlesGenerated = points.size();
+		double porosity = 1.0 - ((double)m_initialVolume / (double)containerVolume);
+		message = format("Porosity %2.2lf\n", porosity);
 		sendMessage(message);
 	}
-	else 
+	else
 	{
 #ifdef WANT_INPUT_CONTROL
 		if (fname)	// If an import file was provided load a designer object
@@ -255,6 +265,16 @@ void MultiCube::preprocess(char* fname)
 	}
 
 	initExposedFaceMap();	// Put all exposed faces on the exposed face map
+
+	if (m_params.aggregateEnable && m_params.replaceEnable)
+	{
+		// Print initial volume and surface area of the remaining cubes in the grid
+		std::string message = format("Initial Volume %lld Total Cubes : Surface Area %lld\n", m_initialVolume, m_maxSurfaceArea);
+		sendMessage(message);
+
+		replaceCubes(NCollisions, false);
+		m_maxSurfaceArea = (int)exposedList.size();
+	}
 
 	// Print initial volume and surface area of the remaining cubes in the grid
 	std::string message = format("Initial Volume %lld Total Cubes : Surface Area %lld\n", m_initialVolume, m_maxSurfaceArea);
@@ -372,8 +392,9 @@ void MultiCube::generateCuboid()
 	}
 }
 
-void MultiCube::generateEllipsoid(int x0, int y0, int z0, int width, int height, int depth, bool remove/*=false*/)
+Dim_t MultiCube::generateEllipsoid(int x0, int y0, int z0, int width, int height, int depth, bool remove/*=false*/, bool countOnly/* = false*/)
 {
+	m_insertionCount = 0;
 	bool rpt = !(depth % 2);
 	if (rpt) --depth;
 
@@ -386,7 +407,7 @@ void MultiCube::generateEllipsoid(int x0, int y0, int z0, int width, int height,
 		if (!remove || (remove && ((zpos >= 0) && (zpos < (int)m_params.zdim))))
 		{
 			double zcomp = sqrt(1.0 - ((double)z / zradius)*((double)z / zradius));
-			generateEllipse(x0, y0, zpos, zcomp, width, height, remove);
+			generateEllipse(x0, y0, zpos, zcomp, width, height, remove, countOnly);
 		}
 		++zpos;
 		if (rpt && (z == 0))
@@ -395,9 +416,11 @@ void MultiCube::generateEllipsoid(int x0, int y0, int z0, int width, int height,
 			rpt = false;
 		}
 	}
+
+	return(m_insertionCount);
 }
 
-void MultiCube::generateEllipse(int x0, int y0, int zpos, double zcomp, int width, int height, bool remove)
+void MultiCube::generateEllipse(int x0, int y0, int zpos, double zcomp, int width, int height, bool remove, bool countOnly)
 {
 	bool yrpt = !(height % 2);
 	if (yrpt) --height;
@@ -433,7 +456,9 @@ void MultiCube::generateEllipse(int x0, int y0, int zpos, double zcomp, int widt
 				}
 				else
 				{
-					insertCube(xpos, ypos, zpos);
+					++m_insertionCount;
+					if (!countOnly)
+						insertCube(xpos, ypos, zpos);
 				}
 				++xpos;
 				if (xrpt && (x == 0))
@@ -724,10 +749,10 @@ void MultiCube::insertFace(Cube* cube, int face, Cube* adjCube, bool doUpdate)
 // be affected by the insert are adjusted.
 void MultiCube::insertCube(int x, int y, int z, bool doUpdate/*=false*/)
 {
-	if ((x < 0) || (y < 0) || (z < 0))
-		return;
-	if ((x >= m_params.xdim) || (y >= m_params.ydim) || (z >= m_params.zdim))
-		return;
+//	if ((x < 0) || (y < 0) || (z < 0))
+//		return;
+//	if ((x >= m_params.xdim) || (y >= m_params.ydim) || (z >= m_params.zdim))
+//		return;
 
 	Cube* cube = getCube(x, y, z);
 
@@ -901,7 +926,7 @@ void MultiCube::resetExpectedVolume(Dim_t expectedVolume)
 // This is necessary when consistent/reproducable starting volumes are important
 // Note: We prevent the replacement of cubes on original surface faces. 
 // i.e. the shape will never exceed its original boundaries.
-void MultiCube::replaceCubes(int nCubes)
+void MultiCube::replaceCubes(int nCubes, bool excludeSurface/*=true*/)
 {
 	std::string message = format("Replacing %d cubes\n", nCubes);
 	sendMessage(message);
@@ -920,12 +945,16 @@ void MultiCube::replaceCubes(int nCubes)
 			Dim_t index = (Dim_t)(xrand() * exposedFaces);
 			key = exposedList[index];
 
-			// Make sure the face isn't a surface face
-			if (surfaceMap.find(key) == surfaceMap.end())
-			{
-				surfaceMap[key] = (int)surfaceMap.size();
-				break;		// Not on surface map, we're done.
+			if (excludeSurface)
+			{	// Make sure the face isn't a surface face
+				if (surfaceMap.find(key) == surfaceMap.end())
+				{
+					surfaceMap[key] = (int)surfaceMap.size();
+					break;		// Not on surface map, we're done.
+				}
 			}
+			else
+				break;	// We accept any face (including surface faces)
 		}
 		if (watchdog_count >= exposedFaces)
 		{	
@@ -962,7 +991,8 @@ void MultiCube::replaceCubes(int nCubes)
 
 		insertCube(xpos, ypos, zpos, true);
 		cube = getCube(xpos, ypos, zpos);
-		addToCubeList(cube);
+		if (excludeSurface)
+			addToCubeList(cube);
 	}
 
 	surfaceMap.clear();		// Free up the surface map - no longer necessary
@@ -1783,6 +1813,52 @@ void MultiCube::outputFragments(char* filename)
 }
 #endif //#ifdef WANT_FRAGMENTATION
 
+void MultiCube::outputInfo(char* filename, int runCount)
+{
+	FILE* fp = fopen(filename, "w+");
+	if (fp == NULL)
+		return;
+
+	time_t _tm = time(NULL);
+	struct tm * curtime = localtime(&_tm);
+	fprintf(fp, "Date:\t%s", asctime(curtime));
+
+	fprintf(fp, "File:\t%s\n", filename);
+	fprintf(fp, "Run:\t%d\n", runCount);
+
+	fprintf(fp, "\nVolume %lld : Surface Area %lld\n", m_initialVolume, m_maxSurfaceArea);
+
+	if (m_params.aggregateEnable)
+	{
+		int x0 = m_params.xdim / 2;
+		int y0 = m_params.ydim / 2;
+		int z0 = m_params.zdim / 2;
+		Dim_t containerVolume = generateEllipsoid(x0, y0, z0, m_params.xdim, m_params.ydim, m_params.zdim, false, true);
+
+		x0 = y0 = z0 = m_params.particleSize / 2;
+		Dim_t particleVolume = generateEllipsoid(x0, y0, z0, m_params.particleSize, m_params.particleSize, m_params.particleSize, false, true);
+		double porosity = 1.0 - ((double)m_initialVolume / (double)containerVolume);
+		fprintf(fp, "Aggregate:\n");
+		fprintf(fp, "\tContainer Volume:\t%lld\n", containerVolume);
+		fprintf(fp, "\tParticle Volume:\t%lld\n", particleVolume);
+		fprintf(fp, "\tParticle Count:\t\t%lld\n", m_particlesGenerated);
+		fprintf(fp, "\tPorosity:\t\t%g\n", porosity);
+		fprintf(fp, "\tCube Shortfall:\t\t%d ", NCollisions);
+		if (m_params.replaceEnable && NCollisions)
+			fprintf(fp, "(Replaced %d)\n", NCollisions);
+		else
+			fprintf(fp, "(No Cubes Replaced)\n");
+	}
+	if (m_params.porosity > 0.0)
+	{
+		Dim_t surfaceArea;
+		Dim_t volume = getVolume(&surfaceArea);
+		fprintf(fp, "Pore Removal: Now %lld Total Cubes: %lld Exposed Faces: Porosity %g\n", volume, surfaceArea, m_params.porosity);
+	}
+
+	fclose(fp);
+}
+
 // Utility routine for writing out 3d grid.
 // Output is cube fragment id, xyz position, # of exposed faces, # of cubes in fragment
 void MultiCube::outputGrid(char* filename)
@@ -1827,47 +1903,47 @@ void MultiCube::outputGrid(char* filename)
 	fclose(fp);
 }
 
-bool MultiCube::openInfo(char* filename)
+bool MultiCube::openSAData(char* filename)
 {
-	if (m_info_fp)
-		fclose(m_info_fp);
+	if (m_saData_fp)
+		fclose(m_saData_fp);
 
-	m_info_fp = fopen(filename, "w+");
-	return(m_info_fp != NULL);
+	m_saData_fp = fopen(filename, "w+");
+	return(m_saData_fp != NULL);
 }
 
-void MultiCube::closeInfo()
+void MultiCube::closeSAData()
 {
-	if (m_info_fp == NULL)
+	if (m_saData_fp == NULL)
 		return;
 	
-	outputProcessInfo();	// Last try
+	outputSAData();	// Last try
 
-	fclose(m_info_fp);
-	m_info_fp = NULL;
+	fclose(m_saData_fp);
+	m_saData_fp = NULL;
 }
 
 // Utility routine for writing out 3d grid during processing.
 // Output is the current number of cubes removed and the number of exposed faces
 // This routine will be called at each processing interval determined by
 // the output increment parameter.
-void MultiCube::outputProcessInfo()
+void MultiCube::outputSAData()
 {
-	if ((m_info_fp == NULL) || processInfo.empty())
+	if ((m_saData_fp == NULL) || saData.empty())
 		return;		// Nothing to output
 
-	std::vector<ProcessInfo>::iterator it = processInfo.begin();
-	while(it != processInfo.end())
-	{	ProcessInfo& pInfo = *it++;
+	std::vector<SAData>::iterator it = saData.begin();
+	while(it != saData.end())
+	{	SAData& pInfo = *it++;
 #ifdef RANDOM_REMOVAL
-	fprintf(m_info_fp, "%lld,%lld,%lld\n", pInfo.nCubesRemoved, pInfo.nExposedFaces, pInfo.nTotalExposedFaces);
+	fprintf(m_saData_fp, "%lld,%lld,%lld\n", pInfo.nCubesRemoved, pInfo.nExposedFaces, pInfo.nTotalExposedFaces);
 #else
-	fprintf(m_info_fp, "%lld,%lld\n", pInfo.nCubesRemoved, pInfo.nExposedFaces);
+	fprintf(m_saData_fp, "%lld,%lld\n", pInfo.nCubesRemoved, pInfo.nExposedFaces);
 #endif //#ifdef RANDOM_REMOVAL
 	}
-	fflush(m_info_fp);
+	fflush(m_saData_fp);
 
-	processInfo.clear();	// Done writing this chunk, clear the old data
+	saData.clear();	// Done writing this chunk, clear the old data
 }
 
 #ifdef WANT_INPUT_CONTROL
@@ -1964,13 +2040,13 @@ bool MultiCube::consume(double& threshhold, int* progress/*=NULL*/)
 		if (m_params.outputSave && (m_lastRemoved != m_cubesRemoved) &&
 			((m_params.outputSubsamp == 1) || !(m_cubesRemoved % m_params.outputSubsamp)))
 		{	// Add processing information to the vector
-			ProcessInfo pInfo;
+			SAData pInfo;
 			pInfo.nCubesRemoved = m_cubesRemoved;
 			pInfo.nExposedFaces = surfaceArea;
 #ifdef RANDOM_REMOVAL
 			pInfo.nTotalExposedFaces = (fastRemove && !m_params.naiveRemoval) ? surfaceArea : exposedFaceCount();
 #endif #ifdef RANDOM_REMOVAL
-			processInfo.push_back(pInfo);
+			saData.push_back(pInfo);
 			m_lastRemoved = m_cubesRemoved;
 		}
 #ifdef HAS_WXWIDGETS
@@ -2016,13 +2092,13 @@ bool MultiCube::consume(double& threshhold, int* progress/*=NULL*/)
 	
 	if (m_params.outputSave && (m_lastRemoved != m_cubesRemoved))
 	{	// Add processing information to the vector (last one!)
-		ProcessInfo pInfo;
+		SAData pInfo;
 		pInfo.nCubesRemoved = m_cubesRemoved;
 		pInfo.nExposedFaces = surfaceArea;
 #ifdef RANDOM_REMOVAL
 		pInfo.nTotalExposedFaces = (fastRemove && !m_params.naiveRemoval) ? surfaceArea : exposedFaceCount();
 #endif //#ifdef RANDOM_REMOVAL
-		processInfo.push_back(pInfo);
+		saData.push_back(pInfo);
 		m_lastRemoved = m_cubesRemoved;
 	}
 #ifdef HAS_WXWIDGETS
@@ -2109,12 +2185,12 @@ bool MultiCube::produceParticles(double& threshhold, int* progress)
 	return(false);	// All particles have been "produced"
 }
 
-#define MAX_MISSES		(100)
+#define MAX_MISSES		(100000)
 #define FILL_PERCENT	(0.35)
 #define SPHERE_SCALAR	((4.0 / 3.0) * 3.141592635)
 #define MAX_NEIGHBORS	(12)
 
-Aggregate::Aggregate(bool isCuboid, double xd, double yd, double zd, double pd, double fd) : m_isCuboid(isCuboid), m_xd(xd), m_yd(yd), m_zd(zd), m_pd(pd), m_fd(fd)
+Aggregate::Aggregate(bool isCuboid, double xd, double yd, double zd, double pd) : m_isCuboid(isCuboid), m_xd(xd), m_yd(yd), m_zd(zd), m_pd(pd)
 {
 	// Get radii for convenience
 	m_xr = m_xd / 2;
@@ -2213,15 +2289,15 @@ point3d Aggregate::generateParticle()
 
 	// Create a vector from selected point to random point
 	point3d np;
-	np.x = c.x - p.x;
-	np.y = c.y - p.y;
-	np.z = c.z - p.z;
+	np.x = (c.x - p.x);
+	np.y = (c.y - p.y);
+	np.z = (c.z - p.z);
 	double mag = sqrt((np.x * np.x) + (np.y * np.y) + (np.z * np.z));
 
 	// Normalize and scale the vector and add the components to the existing point creating the new sub-particles center point
-	np.x = c.x + (m_pd * (np.x / mag));
-	np.y = c.y + (m_pd * (np.y / mag));
-	np.z = c.z + (m_pd * (np.z / mag));
+	np.x = ceil(c.x + (m_pd * (np.x / mag)));
+	np.y = ceil(c.y + (m_pd * (np.y / mag)));
+	np.z = ceil(c.z + (m_pd * (np.z / mag)));
 
 	return(np);
 }
@@ -2246,13 +2322,6 @@ bool Aggregate::validateParticle(point3d p, double pMag)
 		np.z = m_zr - p.z;
 		double mag = sqrt((np.x * np.x) + (np.y * np.y) + (np.z * np.z));
 
-		// Normalize and scale the vector to determine where this sub-particle might intersect the container
-		//double pAdj = m_pr;
-		//np.x = ((m_xr - pAdj) * (np.x / mag));
-		//np.y = ((m_yr - pAdj) * (np.y / mag));
-		//np.z = ((m_zr - pAdj) * (np.z / mag));
-		//double cmag = sqrt((np.x * np.x) + (np.y * np.y) + (np.z * np.z));
-
 		condition = (mag < pMag);	// Verify that the sub-particle will fit inside the container
 	}
 
@@ -2265,9 +2334,9 @@ bool Aggregate::validateParticle(point3d p, double pMag)
 			// Get a particle center off the list
 			// Compute the distance to the new particle center
 			point3d& c = *it++;
-			double xdiff = c.x - p.x;
-			double ydiff = c.y - p.y;
-			double zdiff = c.z - p.z;
+			double xdiff = (c.x - p.x);
+			double ydiff = (c.y - p.y);
+			double zdiff = (c.z - p.z);
 			double mag = sqrt(xdiff * xdiff + ydiff * ydiff + zdiff * zdiff);
 			if (mag < m_pd)	// The new particle would overlap an existing one (Fail!!)
 				return(false);
@@ -2279,15 +2348,21 @@ bool Aggregate::validateParticle(point3d p, double pMag)
 	return(false);
 }
 
-void Aggregate::fractalGeneration(pointVect& displayPoints, point3d cOffset, double xd, double yd, double zd, double pd, double fd, double& pSize)
+void Aggregate::fractalGeneration(pointVect& displayPoints, point3d cOffset, double xd, double yd, double zd, double pd, double& pSize)
 {
-	Aggregate aggregate(m_isCuboid, xd, yd, zd, pd, fd);
+	Aggregate aggregate(m_isCuboid, xd, yd, zd, pd);
 	aggregate.generateParticles(false);
 	pointVect& points = aggregate.getParticles();
 
-	if (pd > fd)
+	double new_r = std::cbrt(aggregate.m_particleVolume / SPHERE_SCALAR);
+	double expected = (aggregate.m_containerVolume / aggregate.m_particleVolume);
+	double new_pv = aggregate.m_particleVolume / expected;
+	double new_pr = std::cbrt(new_pv / SPHERE_SCALAR);
+	if (new_pr > 1)
 	{
-		xd /= fd; yd /= fd; zd /= fd; pd /= fd;
+		xd = yd = zd = pd;
+		pd = new_pr * 2;
+
 		double xr = xd / 2.0;
 		double yr = yd / 2.0;
 		double zr = zd / 2.0;
@@ -2302,7 +2377,7 @@ void Aggregate::fractalGeneration(pointVect& displayPoints, point3d cOffset, dou
 			p.x += c.x - xr;
 			p.y += c.y - yr;
 			p.z += c.z - zr;
-			fractalGeneration(displayPoints, p, xd, yd, zd, pd, fd, pSize);
+			fractalGeneration(displayPoints, p, xd, yd, zd, pd, pSize);
 			//if (++nParticles > 1)
 			//	break;
 		}

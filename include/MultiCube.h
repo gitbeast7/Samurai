@@ -83,7 +83,7 @@ struct CubeParams
 
 	bool	aggregateEnable;
 	unsigned long particleSize;
-	double	fractalDim;
+	bool	replaceEnable;
 
 		// Data Output Control
 	double	outputInc;
@@ -94,6 +94,7 @@ struct CubeParams
 	std::string outputDir;
 	bool	outputSave;
 	bool	outputSaveGrid;
+	bool	outputSaveInfo;
 #ifdef WANT_INPUT_CONTROL
 	std::string inputFile;
 #endif //#ifdef WANT_INPUT_CONTROL
@@ -129,7 +130,7 @@ struct CubeParams
 };
 
 // Stores surface area (nExposedFaces) after each cube is consumed (nCubesRemoved).
-struct ProcessInfo
+struct SAData
 {
 	Dim_t nCubesRemoved;		// Cubes consumed
 	Dim_t nExposedFaces;		// Surface area
@@ -226,10 +227,11 @@ public:
 	int getParticleCount() { return((int)m_aggPoints.size()); }
 
 	// I/O
-	bool openInfo(char* filename);
-	void closeInfo();
-	void outputProcessInfo();
+	bool openSAData(char* filename);
+	void closeSAData();
+	void outputSAData();
 	void outputGrid(char* filename);
+	void outputInfo(char* filename, int runCount);
 
 	// Fragment handling
 	void outputFragments(char* filename);
@@ -268,8 +270,8 @@ private:
 	enum { UNINITIALIZED = 0, NUMFACES = 6 };
 
 	void generateCuboid();
-	void generateEllipsoid(int x0, int y0, int z0, int width, int height, int depth, bool remove=false);
-	void generateEllipse(int x0, int y0, int zpos, double zcomp, int width, int height, bool remove);
+	Dim_t generateEllipsoid(int x0, int y0, int z0, int width, int height, int depth, bool remove=false, bool countOnly=false);
+	void generateEllipse(int x0, int y0, int zpos, double zcomp, int width, int height, bool remove, bool countOnly);
 #ifdef WANT_INPUT_CONTROL
 	void importObject(char* fname);
 #endif //#ifdef WANT_INPUT_CONTROL
@@ -301,7 +303,7 @@ private:
 	uint64_t exposedFaceCount();
 	int getExposedFaces(Cube* cube);
 
-	void replaceCubes(int nCubes);
+	void replaceCubes(int nCubes, bool excludeSurface=true);
 	void addToCubeList(Cube* cube);
 	void removeFromCubeList(Cube* cube);
 	void setupCubeList();
@@ -341,11 +343,13 @@ private:
 	Dim_t	m_initialRemoved;
 	Dim_t	m_maxSurfaceArea;
 	Dim_t	m_cubesRemoved;
+	Dim_t	m_insertionCount;
+	Dim_t	m_particlesGenerated;
 
 	double	m_ellipse_scalar;
 
 	bool*	m_doneFlag;		// Used to test for user request to stop processing
-	FILE*	m_info_fp;		// For ProcessInfo data output
+	FILE*	m_saData_fp;	// For Surface Area data output
 	Dim_t	m_lastRemoved;
 
 #ifdef	NEED_THREAD_PROTECTION
@@ -362,7 +366,7 @@ private:
 	std::vector<Dim_t>			cubeListIndex;
 #endif //#ifdef USE_CUBE_MAP
 	CubeMap						surfaceMap;		// Exposed faces map for original surface of shape (used for block replacement)
-	std::vector<ProcessInfo>	processInfo;	// Volume and Surface Area information acquired during consume() phase
+	std::vector<SAData>			saData;	// Volume and Surface Area information acquired during consume() phase
 
 	bool*					m_in_labels;
 	uint32_t*				m_out_labels;
@@ -387,24 +391,23 @@ private:
 class Aggregate
 {
 public:
-	Aggregate(bool isCuboid, double xd, double yd, double zd, double pd, double fd);
+	Aggregate(bool isCuboid, double xd, double yd, double zd, double pd);
 
 	pointVect&	getParticles() { return(m_points); }
 	void generateParticles(bool verbose=true);
-	void fractalGeneration(pointVect& displayPoints, point3d cOffset, double xd, double yd, double zd, double pd, double fd, double& pSize);
+	void fractalGeneration(pointVect& displayPoints, point3d cOffset, double xd, double yd, double zd, double pd, double& pSize);
+
+	double		m_containerVolume;
+	double		m_particleVolume;
+	uint64_t	m_expected;
 
 private:
 	point3d generateParticle();
 	bool validateParticle(point3d p, double pMag);
 
-	double		m_containerVolume;
-	double		m_particleVolume;
-
 	bool		m_isCuboid;
 	double		m_xd, m_yd, m_zd;
 	double		m_xr, m_yr, m_zr;
 	double		m_pd, m_pr;
-	double		m_fd;
 	pointVect	m_points;
-	uint64_t	m_expected;
 };

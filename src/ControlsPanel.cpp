@@ -17,10 +17,12 @@
 #include "GLDisplay.h"
 #include "Samurai.h"
 
-	// State event
+// State event
 wxDEFINE_EVENT(wxEVT_THREAD_STATE_EVENT, wxCommandEvent);
 // Done event
 wxDEFINE_EVENT(wxEVT_THREAD_DONE_EVENT, wxCommandEvent);
+// Frame Capture Event
+wxDEFINE_EVENT(wxEVT_FRAME_CAPTURE_EVENT, wxCommandEvent);
 
 extern std::string format(const char *fmt, ...);
 
@@ -32,6 +34,7 @@ wxTextCtrl*			GlobalMessageControl = NULL;
 GLDisplayCanvas*	GlobalGLDisplayCanvas = NULL;
 
 #ifdef HAS_WXWIDGETS
+
 void sendMessage(std::string& message)
 {
 	wxCommandEvent* event = new wxCommandEvent(wxEVT_STATUS_EVENT);
@@ -196,6 +199,7 @@ ControlsPanel::ControlsPanel(wxWindow* win) : wxPanel(win, wxID_ANY, wxDefaultPo
 	Bind(wxEVT_CHECKBOX,			&ControlsPanel::OnCheckBox,	this);
 	Bind(wxEVT_THREAD_STATE_EVENT,	&ControlsPanel::OnThreadState, this);
 	Bind(wxEVT_THREAD_DONE_EVENT,	&ControlsPanel::OnThreadDone, this);
+	Bind(wxEVT_FRAME_CAPTURE_EVENT, &ControlsPanel::OnCaptureFrame, this);
 	Bind(wxEVT_NOTEBOOK_PAGE_CHANGED, &ControlsPanel::OnPageChanged, this);
 #ifdef WANT_FRAGMENTATION
 	Bind(wxEVT_SLIDER, &ControlsPanel::OnSlider, this);
@@ -282,9 +286,6 @@ wxBoxSizer* ControlsPanel::buildParamsSection(wxPanel* panel)
 	unsigned long frameVal;
 	wxIntegerValidator<unsigned long> frate(&frameVal);
 	frate.SetRange(1, 50);
-	double fVal;
-	wxFloatingPointValidator<double> frac(1, &fVal);
-	ang.SetRange(0.0, 36.0);
 
 	m_xdim = new wxTextCtrl(panel, wxID_ANY, wxString::Format("%d", m_params.xdim), wxDefaultPosition, wxSize(TEXT_BOX_WIDTH, TEXT_BOX_HEIGHT), wxTE_PROCESS_ENTER | wxTE_CENTRE, dim);
 	m_ydim = new wxTextCtrl(panel, wxID_ANY, wxString::Format("%d", m_params.ydim), wxDefaultPosition, wxSize(TEXT_BOX_WIDTH, TEXT_BOX_HEIGHT), wxTE_PROCESS_ENTER | wxTE_CENTRE, dim);
@@ -295,8 +296,9 @@ wxBoxSizer* ControlsPanel::buildParamsSection(wxPanel* panel)
 	m_aggregateEnable->SetValue(m_params.aggregateEnable);
 	m_particleSize = new wxTextCtrl(panel, wxID_ANY, wxString::Format("%d", m_params.particleSize), wxDefaultPosition, wxSize(TEXT_BOX_WIDTH, TEXT_BOX_HEIGHT), wxTE_PROCESS_ENTER | wxTE_CENTRE, dim);
 	m_particleSize->SetToolTip("Sub-Particle size");
-	m_fractalDim = new wxTextCtrl(panel, wxID_ANY, wxString::Format("%.2lf", m_params.fractalDim), wxDefaultPosition, wxSize(TEXT_BOX_WIDTH, TEXT_BOX_HEIGHT), wxTE_PROCESS_ENTER | wxTE_CENTRE, frac);
-	m_fractalDim->SetToolTip("Fractal Dimension");
+	m_replaceEnable = new wxCheckBox(panel, wxID_ANY, "Replace");
+	m_replaceEnable->SetToolTip("Enable Collision Replacement");
+	m_replaceEnable->SetValue(m_params.replaceEnable);
 
 	m_porosity = new wxTextCtrl(panel, wxID_ANY, wxString::Format("%.2lf", m_params.porosity), wxDefaultPosition, wxSize(TEXT_BOX_WIDTH, TEXT_BOX_HEIGHT), wxTE_PROCESS_ENTER | wxTE_CENTRE, percent);
 	m_porosity->SetToolTip("Fraction of cubes to randomly remove");
@@ -340,6 +342,9 @@ wxBoxSizer* ControlsPanel::buildParamsSection(wxPanel* panel)
 	m_outputSaveGrid = new wxCheckBox(panel, wxID_ANY, "Grid");
 	m_outputSaveGrid->SetToolTip("Save 3d object data");
 	m_outputSaveGrid->SetValue(m_params.outputSaveGrid);
+	m_outputSaveInfo = new wxCheckBox(panel, wxID_ANY, "Info");
+	m_outputSaveInfo->SetToolTip("Save Run Information");
+	m_outputSaveInfo->SetValue(m_params.outputSaveInfo);
 
 	m_chooseDirButton = new wxButton(panel, wxID_ANY, "...", wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT);
 
@@ -421,14 +426,15 @@ wxBoxSizer* ControlsPanel::buildParamsSection(wxPanel* panel)
 	dimSizer->Add(new wxStaticText(panel, wxID_ANY, "ZDim"), wxSizerFlags(0).Center().Border(wxALL, 3));
 	dimSizer->Add(m_zdim, wxSizerFlags(0).Border(wxALL, 3));
 
-	wxSizer *aggSizer = new wxStaticBoxSizer(new wxStaticBox(panel, wxID_ANY, "Aggregate Control"), wxHORIZONTAL);
+	wxSizer *aggSizer = new wxStaticBoxSizer(new wxStaticBox(panel, wxID_ANY, "Aggregate Control"), wxVERTICAL);
 	wxSizer* aSizer0 = new wxBoxSizer(wxHORIZONTAL);
 	aSizer0->Add(m_aggregateEnable, wxSizerFlags(0).Center().Border(wxALL, 3));
-	aSizer0->Add(new wxStaticText(panel, wxID_ANY, "Size"), wxSizerFlags(0).Center().Border(wxALL, 3));
-	aSizer0->Add(m_particleSize, wxSizerFlags(0).Border(wxALL, 3));
-	aSizer0->Add(new wxStaticText(panel, wxID_ANY, "Frac"), wxSizerFlags(0).Center().Border(wxALL, 3));
-	aSizer0->Add(m_fractalDim, wxSizerFlags(0).Border(wxALL, 3));
+	aSizer0->Add(m_replaceEnable, wxSizerFlags(0).Center().Border(wxALL, 3));
+	wxSizer* aSizer1 = new wxBoxSizer(wxHORIZONTAL);
+	aSizer1->Add(new wxStaticText(panel, wxID_ANY, "Size"), wxSizerFlags(0).Center().Border(wxALL, 3));
+	aSizer1->Add(m_particleSize, wxSizerFlags(0).Border(wxALL, 3));
 	aggSizer->Add(aSizer0, wxSizerFlags(0));
+	aggSizer->Add(aSizer1, wxSizerFlags(0));
 
 	wxSizer *poreSizer = new wxStaticBoxSizer(new wxStaticBox(panel, wxID_ANY, "Initial Removal Control"), wxVERTICAL);
 	wxSizer *pSizer0 = new wxBoxSizer(wxHORIZONTAL);
@@ -514,6 +520,7 @@ wxBoxSizer* ControlsPanel::buildParamsSection(wxPanel* panel)
 	oSizer2->Add(new wxStaticText(panel, wxID_ANY, "Save"), wxSizerFlags(0).Center().Border(wxALL, 3));
 	oSizer2->Add(m_outputSave, wxSizerFlags(0).Center().Border(wxALL, 3));
 	oSizer2->Add(m_outputSaveGrid, wxSizerFlags(0).Center().Border(wxALL, 3));
+	oSizer2->Add(m_outputSaveInfo, wxSizerFlags(0).Center().Border(wxALL, 3));
 #ifdef WANT_FRAGMENTATION
 	oSizer2->Add(m_outputSaveFrags, wxSizerFlags(0).Center().Border(wxALL, 3));
 #endif //#ifdef WANT_FRAGMENTATION
@@ -661,8 +668,9 @@ void ControlsPanel::refreshDisplay(bool force/*=false*/)
 
 		if (m_consuming && (m_params.saveGif || m_params.saveFrames))
 		{
-			mGLCanvas->getFrame();
+			captureFrame();
 		}
+
 	}
 	if (m_plot && m_plot->IsShownOnScreen())
 	{
@@ -735,7 +743,8 @@ void ControlsPanel::OnCheckBox(wxCommandEvent& event)
 		return;
 	}
 
-	if ((checkbox == m_poreIsFixed) || (checkbox == m_withReplacement) || (checkbox == m_aggregateEnable))
+	if ((checkbox == m_poreIsFixed) || (checkbox == m_withReplacement) || 
+		(checkbox == m_aggregateEnable) || (checkbox == m_replaceEnable))
 	{
 		m_thread = new ProcThread(this, true);	// Launch with preprocessing only
 	}
@@ -805,7 +814,7 @@ void ControlsPanel::OnText(wxCommandEvent& event)
 	wxTextCtrl* textCtrl = (wxTextCtrl*)event.GetEventObject();
 	if ((textCtrl == m_xdim) || (textCtrl == m_ydim) || (textCtrl == m_zdim) ||
 		(textCtrl == m_porosity) || (textCtrl == m_poreSize) ||
-		(textCtrl == m_particleSize) || (textCtrl == m_fractalDim))
+		(textCtrl == m_particleSize))
 	{
 		m_param_changed = true;
 	}
@@ -831,7 +840,7 @@ void ControlsPanel::OnTextEnter(wxCommandEvent& event)
 
 	if ((textCtrl == m_xdim) || (textCtrl == m_ydim) || (textCtrl == m_zdim) ||
 		(textCtrl == m_porosity) || (textCtrl == m_poreSize) ||
-		(textCtrl == m_particleSize) || (textCtrl == m_fractalDim))
+		(textCtrl == m_particleSize))
 	{
 		if (textCtrl == m_porosity)
 		{
@@ -876,6 +885,18 @@ void ControlsPanel::toggleThreadState()
 		}
 	}
 }
+
+void ControlsPanel::captureFrame()
+{
+	wxCommandEvent* event = new wxCommandEvent(wxEVT_FRAME_CAPTURE_EVENT);
+	wxQueueEvent(this, event);	// Send update event to Controls Panel
+}
+
+void ControlsPanel::OnCaptureFrame(wxCommandEvent& event)
+{
+	mGLCanvas->getFrame();
+}
+
 
 void ControlsPanel::OnThreadState(wxCommandEvent& event)
 {
@@ -1065,7 +1086,7 @@ void ControlsPanel::getCurrentParams()
 
 	m_params.aggregateEnable = m_aggregateEnable->GetValue();
 	m_particleSize->GetValue().ToULong(&m_params.particleSize);
-	m_fractalDim->GetValue().ToDouble(&m_params.fractalDim);
+	m_params.replaceEnable = m_replaceEnable->GetValue();
 #ifdef RANDOM_REMOVAL
 	m_params.naiveRemoval	= m_naiveRemoval->GetValue();
 #endif //#ifdef RANDOM_REMOVAL
@@ -1076,6 +1097,7 @@ void ControlsPanel::getCurrentParams()
 	m_outputNSamps->GetValue().ToULong(&m_params.outputNSamps);
 	m_params.outputSave		= m_outputSave->GetValue();
 	m_params.outputSaveGrid = m_outputSaveGrid->GetValue();
+	m_params.outputSaveInfo = m_outputSaveInfo->GetValue();
 	m_params.displayEnable	= m_displayEnable->GetValue();
 	m_params.displayFaces	= m_displayFaces->GetValue();
 	m_params.showOutlines	= m_showOutlines->GetValue();
@@ -1140,8 +1162,7 @@ void ControlsPanel::setCurrentParams(bool reset/*=true*/)
 	m_aggregateEnable->SetValue(m_params.aggregateEnable);
 	val = wxString::Format("%u", m_params.particleSize);
 	m_particleSize->SetValue(val);
-	val = wxString::Format("%lf", m_params.fractalDim);
-	m_fractalDim->SetValue(val);
+	m_replaceEnable->SetValue(m_params.replaceEnable);
 #ifdef RANDOM_REMOVAL
 	m_naiveRemoval->SetValue(m_params.naiveRemoval);
 #endif //#ifdef RANDOM_REMOVAL
@@ -1157,6 +1178,7 @@ void ControlsPanel::setCurrentParams(bool reset/*=true*/)
 	m_outputNSamps->SetValue(val);
 	m_outputSave->SetValue(m_params.outputSave);
 	m_outputSaveGrid->SetValue(m_params.outputSaveGrid);
+	m_outputSaveInfo->SetValue(m_params.outputSaveInfo);
 	m_displayEnable->SetValue(m_params.displayEnable);
 	m_displayFaces->SetValue(m_params.displayFaces);
 	m_showOutlines->SetValue(m_params.showOutlines);
@@ -1207,8 +1229,8 @@ bool ControlsPanel::saveConfig()
 #else
 	fprintf(fp,"\t<porectrl porosity=\"%.5lf\" size=\"%d\" fixed=\"%d\" isCuboid=\"%d\" replace=\"%d\" />\n", m_params.porosity, m_params.poreSize, m_params.poreIsFixed, m_params.poreIsCuboid, m_params.withReplacement);
 #endif //#ifdef RANDOM_REMOVAL
-	fprintf(fp, "\t<aggctrl enable=\"%d\" size=\"%d\" frac=\"%2lf\"/>\n", m_params.aggregateEnable, m_params.particleSize, m_params.fractalDim);
-	fprintf(fp,"\t<outputctrl inc=\"%.5lf\" end=\"%.5lf\" runs=\"%d\" subsamp=\"%d\" nsamps=\"%d\" dir=\"%s\" save=\"%d\" grid=\"%d\" />\n", m_params.outputInc, m_params.outputEnd, m_params.nRuns, m_params.outputSubsamp, m_params.outputNSamps, m_params.outputDir.c_str(), m_params.outputSave, m_params.outputSaveGrid);
+	fprintf(fp, "\t<aggctrl enable=\"%d\" size=\"%d\" replace=\"%d\"/>\n", m_params.aggregateEnable, m_params.particleSize, m_params.replaceEnable);
+	fprintf(fp,"\t<outputctrl inc=\"%.5lf\" end=\"%.5lf\" runs=\"%d\" subsamp=\"%d\" nsamps=\"%d\" dir=\"%s\" save=\"%d\" grid=\"%d\" info=\"%d\" />\n", m_params.outputInc, m_params.outputEnd, m_params.nRuns, m_params.outputSubsamp, m_params.outputNSamps, m_params.outputDir.c_str(), m_params.outputSave, m_params.outputSaveGrid, m_params.outputSaveInfo);
 #ifdef WANT_INPUT_CONTROL
 	fprintf(fp,"\t<inputctrl file=\"%s\" />\n", m_params.inputFile.c_str());
 #endif //#ifdef WANT_INPUT_CONTROL
@@ -1357,9 +1379,9 @@ bool ControlsPanel::loadConfig()
 						{
 							m_params.particleSize = std::atol(value.c_str());
 						}
-						else if (name == "frac")
+						else if (name == "replace")
 						{
-							m_params.fractalDim = std::atof(value.c_str());
+							m_params.replaceEnable = std::atol(value.c_str());
 						}
 						attr = attr->GetNext();
 					}
@@ -1409,6 +1431,10 @@ bool ControlsPanel::loadConfig()
 						else if (name == "grid")
 						{
 							m_params.outputSaveGrid = std::atol(value.c_str());
+						}
+						else if (name == "info")
+						{
+							m_params.outputSaveInfo = std::atol(value.c_str());
 						}
 						attr = attr->GetNext();
 					}
@@ -1706,13 +1732,11 @@ void ControlsPanel::run(bool is_prerun)
 	char filename[256];	// Used for output files
 	std::string outputDir = ".";
 
-	if (m_params.outputSave || 
-		m_params.outputSaveGrid || 
+	if (m_params.outputSave || m_params.outputSaveGrid || m_params.outputSaveInfo || 
 #ifdef WANT_FRAGMENTATION
 		m_params.outputSaveFrags ||
 #endif //#ifdef WANT_FRAGMENTATION
-		m_params.saveFrames ||
-		m_params.saveGif)
+		m_params.saveFrames || m_params.saveGif)
 	{
 		if (!m_params.outputDir.empty())
 			outputDir = m_params.outputDir;
@@ -1724,15 +1748,20 @@ void ControlsPanel::run(bool is_prerun)
 			wxFileName::Mkdir(outputDir);
 	}
 
+	if (m_params.outputSave)
+	{
+		sprintf(filename, "%s\\%sSA%dx%dx%dp%ds%d.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity*100+.5), m_params.particleSize);
+		m_grid->openSAData(filename);		// Open volume vs surface area data file
+	}
 	if (m_params.outputSaveGrid)
 	{
 		sprintf(filename, "%s\\%sGrid%dx%dx%dp%ds%d_0.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5), m_params.particleSize);
-		m_grid->outputGrid(filename);	// Dump info for doing 3D cube plots
+		m_grid->outputGrid(filename);	// Dump x,y,z data for doing 3D cube plots
 	}
-	if (m_params.outputSave)
+	if (m_params.outputSaveInfo)
 	{
-		sprintf(filename, "%s\\%sInfo%dx%dx%dp%ds%d.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity*100+.5), m_params.particleSize);
-		m_grid->openInfo(filename);		// Open volume vs surface area data file
+		sprintf(filename, "%s\\%sInfo%dx%dx%dp%ds%d.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5), m_params.particleSize);
+		m_grid->outputInfo(filename, m_run_count);	// Save run information bookkeeping
 	}
 
 	m_consuming = true;		// Used for frame capture
@@ -1785,7 +1814,7 @@ void ControlsPanel::run(bool is_prerun)
 
 		if (m_params.outputSave)
 		{
-			m_grid->outputProcessInfo();	// Dump volume vs surface area data
+			m_grid->outputSAData();	// Dump volume vs surface area data
 		}
 
 		if (progress != last_progress)
@@ -1854,7 +1883,7 @@ void ControlsPanel::run(bool is_prerun)
 
 	if (m_params.outputSave)
 	{	
-		m_grid->closeInfo();	// Finish write and close volume vs surface area data file
+		m_grid->closeSAData();	// Finish write and close volume vs surface area data file
 	}
 
 	refreshDisplay();		// Do display update

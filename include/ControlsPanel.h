@@ -18,6 +18,8 @@
 wxDECLARE_EVENT(wxEVT_THREAD_STATE_EVENT, wxCommandEvent);
 // Done event
 wxDECLARE_EVENT(wxEVT_THREAD_DONE_EVENT, wxCommandEvent);
+// Frame Capture Event
+wxDECLARE_EVENT(wxEVT_CAPTURE_FRAME_EVENT, wxCommandEvent);
 
 class ProcThread;
 class GLDisplayCanvas;
@@ -54,6 +56,8 @@ private:
 	void OnThreadState(wxCommandEvent& event);
 	void OnThreadDone(wxCommandEvent& event);
 	void OnPageChanged(wxBookCtrlEvent& event);
+	void OnCaptureFrame(wxCommandEvent& event);
+
 #ifdef WANT_FRAGMENTATION
 	void OnSlider(wxCommandEvent& event);
 #endif// #ifdef WANT_FRAGMENTATION
@@ -69,6 +73,8 @@ private:
 	void updateSampling();
 	void rescale(bool isCuboid);
 //	void rescaleSA(bool isCuboid);
+
+	void captureFrame();
 
 	wxBoxSizer* buildParamsSection(wxPanel* panel);
 
@@ -90,7 +96,6 @@ private:
 	wxTextCtrl*		m_porosity;
 	wxTextCtrl*		m_poreSize;
 	wxTextCtrl*		m_particleSize;
-	wxTextCtrl*		m_fractalDim;
 	wxTextCtrl*		m_outputInc;
 	wxTextCtrl*		m_outputEnd;
 	wxTextCtrl*		m_nRuns;
@@ -99,6 +104,7 @@ private:
 	wxTextCtrl*		m_outputDir;
 	wxCheckBox*		m_outputSave;
 	wxCheckBox*		m_outputSaveGrid;
+	wxCheckBox*		m_outputSaveInfo;
 #ifdef WANT_INPUT_CONTROL
 	wxTextCtrl*		m_inputFile;
 	wxButton*		m_chooseFileButton;
@@ -111,6 +117,7 @@ private:
 	wxCheckBox*		m_naiveRemoval;
 #endif //#ifdef RANDOM_REMOVAL
 	wxCheckBox*		m_aggregateEnable;
+	wxCheckBox*		m_replaceEnable;
 	wxCheckBox*		m_displayEnable;
 	wxCheckBox*		m_showOutlines;
 	wxCheckBox*		m_showAxes;

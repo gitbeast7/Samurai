@@ -550,6 +550,7 @@ void GLDisplayCanvas::OnPaint(wxPaintEvent& WXUNUSED(event))
 	else
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	//glFlush();  glFinish();
 	SwapBuffers();
 }
 
@@ -560,7 +561,7 @@ void GLDisplayCanvas::getScreen(std::string fileName)
 	int w = clientSize.x;
 	int h = clientSize.y;
 	GLubyte* imageBuf = (GLubyte*)malloc(w * h * sizeof(GLubyte) * 3);
-	glFlush();
+	glReadBuffer(GL_FRONT);
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
 	glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, imageBuf);
 	wxImage image = wxImage(w, h, (unsigned char *)imageBuf).Mirror(false);
@@ -574,14 +575,14 @@ void GLDisplayCanvas::getFrame()
 	int w = clientSize.x;
 	int h = clientSize.y;
 	GLubyte* imageBuf = (GLubyte*)calloc(w * h , sizeof(GLubyte) * 3);
-	glFlush();
+	glReadBuffer(GL_FRONT);
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
 	glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, imageBuf);
-	wxImage simage = wxImage(w, h, (unsigned char *)imageBuf).Mirror(false);
-	if (simage.IsOk())
-		m_images.push_back(simage);
-	//free(imageBuf);
-	/*
+	wxImage image = wxImage(w, h, (unsigned char *)imageBuf).Mirror(false);
+	if (image.IsOk())
+		m_images.push_back(image);
+
+/*
 	wxClientDC dc(this);
 
 	const wxSize ClientSize = GetClientSize();

@@ -2185,11 +2185,34 @@ bool MultiCube::produceParticles(double& threshhold, int* progress)
 	return(false);	// All particles have been "produced"
 }
 
-#define MAX_MISSES		(100000)
-#define FILL_PERCENT	(0.35)
+#define MAX_MISSES		(1000000)
+#define FILL_PERCENT	(0.37)
 #define SPHERE_SCALAR	((4.0 / 3.0) * 3.141592635)
 #define MAX_NEIGHBORS	(12)
 
+/*-------------------------------------------------------------------------------------------------------------------------------------
+ The aggregate class works by randomly filling a container (either spherical or cuboid)
+ with spherical sub-particles. This filling process is performed using the following algorithm...
+	Initial: Determine a maximum number of sub-particles that could fit into the container assuming
+	   the sub-particles could conform to the container. (Sets an upper bound for the search algorithm)
+	   Note: This is done to limit the computation burden while searching for empty spaces to place a sub-particle.
+	   According to the Random Close Pack (RCP) algorithm for spheres the best density one can expect is 64%, although
+	   it can be much worse. Empirical measurements for our container/particle sizes (with a reasonable search duration)
+     have determined a density of 37%. So the expected # of sub-particles generated equals the "upper bound" * .37 
+	1: The aggregate is seeded with a single sub-particle at the center of the container and
+	   added to a list of all sub-particles that will be subsequently generated (the aggregate)
+	2: While the number of sub-particles generated is less than the expected number (i.e. there is room left in the container)
+		a:	Randomly select a sub-particle off the list of aggregate particles.
+		b:  Randomly select a point anywhere within the volume of the container.
+		c:	Create a vector from that point to the center of the sub-particle.
+			This yields a direction vector that gives a location on the surface of the sub-particle on to which we attempt to 
+			aggregate a new particle.
+		d:	Create a point which corresponds to the center of the new candidate sub-particle
+		e:	Verify that the candidate if placed at the randomly selected location wouldn't exceed the container boundaries (i.e. protrudes outside the container).
+		f:	Scan the aggregate particles and verify that the new candidate doesn't overlap any of the aggregate particles (i.e. not enough space between particles).
+		g:	If the candidate sub-particle passes both of the above tests it is added to the aggregate list.
+	3: If the number of attempts to find room for a new particle exceeds a "number of tries" threshold we stop trying.
+--------------------------------------------------------------------------------------------------------------------------------------*/
 Aggregate::Aggregate(bool isCuboid, double xd, double yd, double zd, double pd) : m_isCuboid(isCuboid), m_xd(xd), m_yd(yd), m_zd(zd), m_pd(pd)
 {
 	// Get radii for convenience

@@ -53,7 +53,7 @@ EVT_MENU(wxID_RESET, MyFrame::OnReset)
 EVT_MENU(wxID_ABOUT, MyFrame::OnAbout)
 wxEND_EVENT_TABLE()
 
-MyFrame::MyFrame() : wxFrame(NULL, wxID_ANY, "Samurai (Version 2.0)")
+MyFrame::MyFrame() : wxFrame(NULL, wxID_ANY, "Samurai (Version 1.0)")
 {
 	GlobalFrame = this;
 

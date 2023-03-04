@@ -3,6 +3,7 @@
 #include <wx/panel.h>
 #include <wx/textctrl.h>
 #include <wx/checkbox.h>
+#include <wx/combobox.h>
 #include <wx/button.h>
 #include <wx/radiobut.h>
 #include <wx/sizer.h>
@@ -52,6 +53,7 @@ private:
 	void OnTextEnter(wxCommandEvent& event);
 	void OnText(wxCommandEvent& event);
 	void OnRadioButton(wxCommandEvent& event);
+	void OnComboBox(wxCommandEvent& event);
 	void OnCheckBox(wxCommandEvent& event);
 	void OnThreadState(wxCommandEvent& event);
 	void OnThreadDone(wxCommandEvent& event);
@@ -62,7 +64,7 @@ private:
 	void OnSlider(wxCommandEvent& event);
 #endif// #ifdef WANT_FRAGMENTATION
 	void displaySectionEnable(bool state);
-	void porositySectionEnable(bool state);
+	void porositySectionEnable(bool state, bool enable=true);
 
 	bool prerun(bool is_prerun);
 	void destroyGrid();
@@ -119,6 +121,7 @@ private:
 	wxCheckBox*		m_aggregateEnable;
 	wxCheckBox*		m_replaceEnable;
 	wxCheckBox*		m_displayEnable;
+	wxComboBox*		m_colorMap;
 	wxCheckBox*		m_showOutlines;
 	wxCheckBox*		m_showAxes;
 	wxCheckBox*		m_pauseOnInc;

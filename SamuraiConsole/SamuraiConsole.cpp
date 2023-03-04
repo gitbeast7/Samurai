@@ -146,7 +146,7 @@ void run(CubeParams& params)
 	if (params.outputSave)
 	{
 		sprintf(filename, "%s\\%sInfo%dx%dx%dp%d.txt", params.outputDir.c_str(), params.cuboid ? "Cuboid" : "Ellipsoid", params.xdim, params.ydim, params.zdim, (int)(params.porosity * 100 + .5));
-		grid->openInfo(filename);		// Open volume vs surface area data file
+		grid->openSAData(filename);		// Open volume vs surface area data file
 	}
 
 	int progress = 0;
@@ -175,7 +175,7 @@ void run(CubeParams& params)
 		}
 		if (params.outputSave)
 		{
-			grid->outputProcessInfo();	// Dump volume vs surface area data
+			grid->outputSAData();	// Dump volume vs surface area data
 		}
 
 		Threshhold += params.outputInc;		// Increment by "outputInc" after each dump
@@ -187,7 +187,7 @@ void run(CubeParams& params)
 
 	if (params.outputSave)
 	{
-		grid->closeInfo();	// Finish write and close volume vs surface area data file
+		grid->closeSAData();	// Finish write and close volume vs surface area data file
 	}
 
 	delete grid;

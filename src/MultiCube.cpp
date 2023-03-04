@@ -80,7 +80,7 @@ MultiCube::MultiCube(CubeParams& params, bool* doneFlag, char* fname/*=NULL*/) :
 
 //#define VERIFY_SOURCE	// Uncomment if you wish the PRNG seed to always be the same. (Useful for verifing model after code changes.)
 #ifdef VERIFY_SOURCE
-	xsrand();		// Seed the pseudo-random number generator with fixed value
+	xsrand(30111);		// Seed the pseudo-random number generator with fixed value
 #else
 	LARGE_INTEGER seed;
 	QueryPerformanceCounter(&seed);
@@ -157,6 +157,7 @@ void MultiCube::loadDefaults(CubeParams& params)
 	params.ypos			= 0;
 	params.sashpos		= params.ysize / 2;
 	params.displayEnable= true;
+	params.colormapIndex= 0;
 	params.displayFaces = true;
 	params.showOutlines = false;
 	params.showAxes		= false;
@@ -189,6 +190,9 @@ void MultiCube::initialize()
 }
 
 int NCollisions = 0;
+int OutOfBounds = 0;
+
+//#define CHECK_OUT_OF_BOUNDS
 
 // Perform any preprocessing before the consume process.
 void MultiCube::preprocess(char* fname)
@@ -196,13 +200,9 @@ void MultiCube::preprocess(char* fname)
 	if (m_params.aggregateEnable)
 	{
 		NCollisions = 0;
-
-		int x0 = m_params.xdim / 2;
-		int y0 = m_params.ydim / 2;
-		int z0 = m_params.zdim / 2;
-		Dim_t containerVolume = generateEllipsoid(x0, y0, z0, m_params.xdim, m_params.ydim, m_params.zdim, false, true);
-		std::string message = format("Container Volume %lld\n", containerVolume);
-		sendMessage(message);
+#ifdef CHECK_OUT_OF_BOUNDS
+		OutOfBounds = 0;
+#endif //#ifdef CHECK_OUT_OF_BOUNDS
 
 		double xdim = m_params.xdim;
 		double ydim = m_params.ydim;
@@ -234,13 +234,14 @@ void MultiCube::preprocess(char* fname)
 			int y0 = (int)(p.y);
 			int z0 = (int)(p.z);
 			generateEllipsoid(x0, y0, z0, (int)pdim, (int)pdim, (int)pdim);
-			//break;
 		}
 		//detectFragments(true);
 		m_particlesGenerated = points.size();
-		double porosity = 1.0 - ((double)m_initialVolume / (double)containerVolume);
-		message = format("Porosity %2.2lf\n", porosity);
+
+#ifdef CHECK_OUT_OF_BOUNDS
+		std::string message = format("Out of Bounds points %d\n", OutOfBounds);
 		sendMessage(message);
+#endif //#ifdef CHECK_OUT_OF_BOUNDS
 	}
 	else
 	{
@@ -266,7 +267,7 @@ void MultiCube::preprocess(char* fname)
 
 	initExposedFaceMap();	// Put all exposed faces on the exposed face map
 
-	if (m_params.aggregateEnable && m_params.replaceEnable)
+	if (m_params.aggregateEnable && m_params.replaceEnable && NCollisions)
 	{
 		// Print initial volume and surface area of the remaining cubes in the grid
 		std::string message = format("Initial Volume %lld Total Cubes : Surface Area %lld\n", m_initialVolume, m_maxSurfaceArea);
@@ -747,19 +748,28 @@ void MultiCube::insertFace(Cube* cube, int face, Cube* adjCube, bool doUpdate)
 // Inserts a cube into the 3D grid at (x,y,z)
 // If doUpdate is true, any adjacent cubes that would
 // be affected by the insert are adjusted.
-void MultiCube::insertCube(int x, int y, int z, bool doUpdate/*=false*/)
+Cube* MultiCube::insertCube(int x, int y, int z, bool doUpdate/*=false*/)
 {
-//	if ((x < 0) || (y < 0) || (z < 0))
-//		return;
-//	if ((x >= m_params.xdim) || (y >= m_params.ydim) || (z >= m_params.zdim))
-//		return;
+	if (m_params.aggregateEnable && doUpdate)
+	{
+		if ((x < 0) || (y < 0) || (z < 0))
+		{
+			++OutOfBounds;
+			return(NULL);
+		}
+		if ((x >= m_params.xdim) || (y >= m_params.ydim) || (z >= m_params.zdim))
+		{
+			++OutOfBounds;
+			return(NULL);
+		}
+	}
 
 	Cube* cube = getCube(x, y, z);
 
 	if (visible(cube->info))
 	{
 		NCollisions++;
-		return;	// Already visible in the grid - nothing to do
+		return(NULL);	// Already visible in the grid - nothing to do
 	}
 
 	show(cube->info);	// Make cube visible in the grid
@@ -802,6 +812,8 @@ void MultiCube::insertCube(int x, int y, int z, bool doUpdate/*=false*/)
 	insertFace(cube, 5, adjCube, doUpdate);
 
 	++m_initialVolume;
+
+	return(cube);
 }
 
 // Make sure a "pore" doesn't exceed the bounds of the 3D grid
@@ -989,10 +1001,19 @@ void MultiCube::replaceCubes(int nCubes, bool excludeSurface/*=true*/)
 			break;
 		}
 
-		insertCube(xpos, ypos, zpos, true);
-		cube = getCube(xpos, ypos, zpos);
-		if (excludeSurface)
-			addToCubeList(cube);
+		cube = insertCube(xpos, ypos, zpos, true);
+		//cube = getCube(xpos, ypos, zpos);
+		if (cube)
+		{
+			if (excludeSurface)
+				addToCubeList(cube);
+		}
+		else
+		{
+			++nCubes;	// Replacement failed, try again
+			message = format("Cube %d replacement failed - trying again\n", nCubes);
+			sendMessage(message);
+		}
 	}
 
 	surfaceMap.clear();		// Free up the surface map - no longer necessary
@@ -2185,10 +2206,11 @@ bool MultiCube::produceParticles(double& threshhold, int* progress)
 	return(false);	// All particles have been "produced"
 }
 
-#define MAX_MISSES		(1000000)
+#define MAX_MISSES		(100000)
 #define FILL_PERCENT	(0.37)
 #define SPHERE_SCALAR	((4.0 / 3.0) * 3.141592635)
-#define MAX_NEIGHBORS	(12)
+#define MAG_ROUND		(0.5)
+//#define MAX_NEIGHBORS	(32)
 
 /*-------------------------------------------------------------------------------------------------------------------------------------
  The aggregate class works by randomly filling a container (either spherical or cuboid)
@@ -2232,7 +2254,6 @@ Aggregate::Aggregate(bool isCuboid, double xd, double yd, double zd, double pd) 
 	p.y = m_yr + pAdj;
 	p.z = m_zr + pAdj;
 
-	p.nNeighbors = 0;
 	m_points.push_back(p);
 
 	if (m_isCuboid)
@@ -2256,36 +2277,23 @@ void Aggregate::generateParticles(bool verbose/*=true*/)
 	uint64_t nMisses = 0;
 	while ((m_points.size() < m_expected) && (nMisses < MAX_MISSES))
 	{
-		point3d p = generateParticle();
-		p.nNeighbors = 0;
-		if (validateParticle(p, pMag))
+		if (((m_points.size() % 10000) == 0) && (nMisses == 0))
 		{
-			int nPoints = (int)m_points.size();
-			// Update the neighbor fields of the new particle and its neighbors
-			for (int index = 0; index < nPoints; index++)
-			{
-				// Get a particle center off the list
-				// Compute the distance to the new particle center
-				point3d& c = m_points[index];
-				double xdiff = c.x - p.x;
-				double ydiff = c.y - p.y;
-				double zdiff = c.z - p.z;
-				double mag = sqrt(xdiff * xdiff + ydiff * ydiff + zdiff * zdiff);
-				// Count the new particle's neighbors
-				if (mag < (m_pd + m_pr))
-				{
-					++p.nNeighbors;
-					++c.nNeighbors;
-				}
-			}
-			m_points.push_back(p);
-
-			nMisses = 0;
+			std::string message = format("%d of %d points generated\n", m_points.size(), m_expected);
+			sendMessage(message);
+		}
+		int aggIndex = 0;
+		point3d p = generateParticle(aggIndex);
+		if (validateParticle(p, pMag, aggIndex))
+		{
+			updateParticleNeighbors(p);
+			nMisses = 0;	// Found a valid particle, reset the escape counter
+			//if (m_points.size() == 3)
+			//	break;
 		}
 		else
-			++nMisses;	// debug break point location
+			++nMisses;	// Increment the escape count while searching for a valid particle 
 	}
-
 	if (verbose)
 	{
 		std::string message = format("Finished: Expected %d Created %d\n", m_expected, m_points.size());
@@ -2293,39 +2301,37 @@ void Aggregate::generateParticles(bool verbose/*=true*/)
 	}
 }
 
-point3d Aggregate::generateParticle()
+point3d Aggregate::generateParticle(int& index)
 {
 	// Pick an existing point from the list (the center of a sub-particle)
-	int index = (int)(xrand() * m_points.size());
+	index = (int)(xrand() * m_points.size());
 	point3d c = m_points[index];
-	while (c.nNeighbors >= MAX_NEIGHBORS)
-	{
-		index = (int)(xrand() * m_points.size());
-		c = m_points[index];
-	}
 
 	// Create a random point somewhere in the volume
 	point3d p;
-	p.x = xrand() * m_xd;
-	p.y = xrand() * m_yd;
-	p.z = xrand() * m_zd;
+	p.x = (xrand() * m_xd);
+	p.y = (xrand() * m_yd);
+	p.z = (xrand() * m_zd);
 
 	// Create a vector from selected point to random point
 	point3d np;
 	np.x = (c.x - p.x);
 	np.y = (c.y - p.y);
 	np.z = (c.z - p.z);
+
 	double mag = sqrt((np.x * np.x) + (np.y * np.y) + (np.z * np.z));
 
+	double scalar = m_pd + MAG_ROUND;
+
 	// Normalize and scale the vector and add the components to the existing point creating the new sub-particles center point
-	np.x = ceil(c.x + (m_pd * (np.x / mag)));
-	np.y = ceil(c.y + (m_pd * (np.y / mag)));
-	np.z = ceil(c.z + (m_pd * (np.z / mag)));
+	np.x = round(c.x + (scalar * (np.x / mag)));
+	np.y = round(c.y + (scalar * (np.y / mag)));
+	np.z = round(c.z + (scalar * (np.z / mag)));
 
 	return(np);
 }
 
-bool Aggregate::validateParticle(point3d p, double pMag)
+bool Aggregate::validateParticle(point3d p, double pMag, int index)
 {
 	bool condition;
 	// Verify that the particle will be within the volume of the container
@@ -2351,24 +2357,50 @@ bool Aggregate::validateParticle(point3d p, double pMag)
 	if (condition)
 	{
 		// Verify the new particle doesn't overlap with any existing particles
-		pointVect::iterator it = m_points.begin();
-		while (it != m_points.end())
+		point3d& aggp = m_points[index];	// Get the point we're trying to stick to
+		// Scan though the current aggregates neighbors and check for a possible collision
+		double dMax = m_pd + MAG_ROUND;
+		std::vector<int>::iterator ait = aggp.neighbors.begin();
+		while (ait != aggp.neighbors.end())
 		{
 			// Get a particle center off the list
 			// Compute the distance to the new particle center
-			point3d& c = *it++;
+			point3d& c = m_points[*ait++];
 			double xdiff = (c.x - p.x);
 			double ydiff = (c.y - p.y);
 			double zdiff = (c.z - p.z);
 			double mag = sqrt(xdiff * xdiff + ydiff * ydiff + zdiff * zdiff);
-			if (mag < m_pd)	// The new particle would overlap an existing one (Fail!!)
+			if (mag < dMax)	// The new particle would overlap an existing one (Fail!!)
 				return(false);
-			mag = mag;
 		}
 		return(true);	// Success!!
 	}
 
 	return(false);
+}
+
+void Aggregate::updateParticleNeighbors(point3d& p)
+{
+	double dMax = m_pd + m_pd;
+	int nPoints = (int)m_points.size();
+	// Update the neighbor fields of the new particle and its neighbors
+	for (int index = 0; index < nPoints; index++)
+	{
+		// Get a particle center off the list
+		// Compute the distance to the new particle center
+		point3d& c = m_points[index];
+		double xdiff = c.x - p.x;
+		double ydiff = c.y - p.y;
+		double zdiff = c.z - p.z;
+		double mag = sqrt(xdiff * xdiff + ydiff * ydiff + zdiff * zdiff);
+		// Adjust the new particle's neighbors
+		if (mag <= dMax)
+		{
+			p.neighbors.push_back(index);
+			c.neighbors.push_back(nPoints);
+		}
+	}
+	m_points.push_back(p);
 }
 
 void Aggregate::fractalGeneration(pointVect& displayPoints, point3d cOffset, double xd, double yd, double zd, double pd, double& pSize)

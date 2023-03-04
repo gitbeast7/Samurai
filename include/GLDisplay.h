@@ -8,6 +8,10 @@
 
 #include "MultiCube.h"
 
+#define N_COLORMAPS		(5)
+
+typedef unsigned char(*MapPointer)[6][3] ;
+
 // the rendering context used by all GL canvases
 class GLDisplayContext3D : public wxGLContext
 {
@@ -20,6 +24,7 @@ public:
 	void DrawBoundingBox(float xp, float yp, float zp);
 
 	void SetView(float zdim, float* params);
+	void GenerateTextures(int cmapIndex = -1);
 
 private:
     void DrawCube(Info_t cubeInfo, float xp, float yp, float zp);
@@ -28,6 +33,7 @@ private:
     GLuint	m_textures[12];
 	float	m_lastZdim;
 	int		m_lastIndex;
+	MapPointer m_cmaps[N_COLORMAPS];
 };
 
 class GLDisplayCanvas : public wxGLCanvas

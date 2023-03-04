@@ -105,6 +105,7 @@ struct CubeParams
 	unsigned long sashpos;
 		// Display Control
 	bool	displayEnable;
+	unsigned long colormapIndex;
 	bool	displayFaces;
 	bool	pauseOnInc;
 	bool	showOutlines;
@@ -158,7 +159,7 @@ struct Cube
 
 struct point3d {
 	double x, y, z;
-	int nNeighbors;
+	std::vector<int>	neighbors;
 };
 
 typedef std::vector<point3d> pointVect;
@@ -286,7 +287,7 @@ private:
 	void removeCube();
 	void removeCube(Cube* cube);
 	void removeCube(int x, int y, int z);
-	void insertCube(int x, int y, int z, bool doUpdate=false);
+	Cube* insertCube(int x, int y, int z, bool doUpdate=false);
 	void deleteCube(Cube* cube);
 #ifdef RANDOM_REMOVAL
 	void naiveRemoveCube();
@@ -402,8 +403,9 @@ public:
 	uint64_t	m_expected;
 
 private:
-	point3d generateParticle();
-	bool validateParticle(point3d p, double pMag);
+	point3d generateParticle(int& index);
+	bool validateParticle(point3d p, double pMag, int index);
+	void updateParticleNeighbors(point3d& p);
 
 	bool		m_isCuboid;
 	double		m_xd, m_yd, m_zd;

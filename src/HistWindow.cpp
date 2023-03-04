@@ -5,6 +5,9 @@
 #include "HistWindow.h"
 #include "PlotWindow.h"
 #include "MultiCube.h"
+#include "GLDisplay.h"
+
+extern MapPointer ActiveColorMap;
 
 HistWindow::HistWindow(wxWindow* win) : wxWindow(win, wxID_ANY)
 {
@@ -44,8 +47,6 @@ void HistWindow::OnSize(wxSizeEvent& event)
 	event.Skip();
 }
 
-extern unsigned char colormap[6][3];
-
 void HistWindow::doDraw(wxDC& dc)
 {
 	wxSize sz = GetClientSize();
@@ -82,7 +83,7 @@ void HistWindow::doDraw(wxDC& dc)
 			m_hmax[i] = histVal;
 		double count = (histVal - m_min) * m_scl;
 		int yi = (int)round(count);
-		unsigned char* color = colormap[MAX_COLOR_INDEX-i];
+		unsigned char* color = (*ActiveColorMap)[MAX_COLOR_INDEX-i];
 		wxBrush brush(wxColour(color[0], color[1], color[2]));
 		dc.SetBrush(brush);
 		dc.DrawRectangle(i*xwidth+XOFF, sz.y-yi, xwidth, yi);

@@ -32,6 +32,7 @@ extern ControlsPanel*	GlobalControlsPanel;
 
 wxTextCtrl*			GlobalMessageControl = NULL;
 GLDisplayCanvas*	GlobalGLDisplayCanvas = NULL;
+extern GLDisplayContext3D	*GlobalGL3dContext;
 
 #ifdef HAS_WXWIDGETS
 
@@ -196,6 +197,7 @@ ControlsPanel::ControlsPanel(wxWindow* win) : wxPanel(win, wxID_ANY, wxDefaultPo
 	Bind(wxEVT_TEXT_ENTER,			&ControlsPanel::OnTextEnter, this);
 	Bind(wxEVT_TEXT,				&ControlsPanel::OnText, this);
 	Bind(wxEVT_RADIOBUTTON,			&ControlsPanel::OnRadioButton, this);
+	Bind(wxEVT_COMBOBOX,			&ControlsPanel::OnComboBox, this);
 	Bind(wxEVT_CHECKBOX,			&ControlsPanel::OnCheckBox,	this);
 	Bind(wxEVT_THREAD_STATE_EVENT,	&ControlsPanel::OnThreadState, this);
 	Bind(wxEVT_THREAD_DONE_EVENT,	&ControlsPanel::OnThreadDone, this);
@@ -398,6 +400,10 @@ wxBoxSizer* ControlsPanel::buildParamsSection(wxPanel* panel)
 	else
 		m_displayFrags->SetValue(true);
 
+	wxString ColorMapNames[N_COLORMAPS] = { "Jet", "Matter", "Copper", "Pink", "Spring" };
+	m_colorMap = new wxComboBox(panel, wxID_ANY, ColorMapNames[m_params.colormapIndex], wxDefaultPosition, wxDefaultSize, N_COLORMAPS, ColorMapNames, wxCB_DROPDOWN | wxCB_READONLY);
+	m_colorMap->SetToolTip("Colormap used for display");
+	GlobalGL3dContext->GenerateTextures(m_params.colormapIndex);
 	m_showOutlines = new wxCheckBox(panel, wxID_ANY, "Outlines");
 	m_showOutlines->SetToolTip("Outline cube faces");
 	m_showOutlines->SetValue(m_params.showOutlines);
@@ -457,7 +463,7 @@ wxBoxSizer* ControlsPanel::buildParamsSection(wxPanel* panel)
 	poreSizer->Add(pSizer0a, wxSizerFlags(0).Expand());
 	poreSizer->Add(pSizer1, wxSizerFlags(0).Expand());
 	
-	porositySectionEnable((m_params.porosity > 0.0));
+	porositySectionEnable((m_params.porosity > 0.0), !m_params.aggregateEnable);
 
 	wxSizer *dispSizer = new wxStaticBoxSizer(new wxStaticBox(panel, wxID_ANY, "Display Control"), wxVERTICAL);
 	wxSizer* dSizer0 = new wxBoxSizer(wxHORIZONTAL);
@@ -471,9 +477,12 @@ wxBoxSizer* ControlsPanel::buildParamsSection(wxPanel* panel)
 	dSizer1->Add(m_displayFaces, wxSizerFlags(0).Center().Border(wxLEFT, 6));
 	dSizer1->Add(m_displayFrags, wxSizerFlags(0).Center().Border(wxALL, 3));
 	wxSizer* dSizer1a = new wxBoxSizer(wxHORIZONTAL);
-	dSizer1a->Add(new wxStaticText(panel, wxID_ANY, "Show"), wxSizerFlags(0).Center().Border(wxRIGHT, 3));
-	dSizer1a->Add(m_showOutlines, wxSizerFlags(0).Border(wxALL, 3));
-	dSizer1a->Add(m_showAxes, wxSizerFlags(0).Border(wxALL, 3));
+	dSizer1a->Add(new wxStaticText(panel, wxID_ANY, "Colour Map"), wxSizerFlags(0).Center());
+	dSizer1a->Add(m_colorMap, wxSizerFlags(0).Border(wxLEFT, 3));
+	wxSizer* dSizer1b = new wxBoxSizer(wxHORIZONTAL);
+	dSizer1b->Add(new wxStaticText(panel, wxID_ANY, "Show"), wxSizerFlags(0).Center().Border(wxRIGHT, 3));
+	dSizer1b->Add(m_showOutlines, wxSizerFlags(0).Border(wxALL, 3));
+	dSizer1b->Add(m_showAxes, wxSizerFlags(0).Border(wxALL, 3));
 	wxSizer* dSizer2 = new wxBoxSizer(wxHORIZONTAL);
 	dSizer2->Add(new wxStaticText(panel, wxID_ANY, "Save"), wxSizerFlags(0).Center().Border(wxRIGHT, 3));
 	dSizer2->Add(m_saveFrames, wxSizerFlags(0).Center().Border(wxLEFT | wxBOTTOM, 3));
@@ -493,6 +502,7 @@ wxBoxSizer* ControlsPanel::buildParamsSection(wxPanel* panel)
 	dispSizer->Add(dSizer0, wxSizerFlags(0));
 	dispSizer->Add(dSizer1, wxSizerFlags(0).Border(wxTOP, 3));
 	dispSizer->Add(dSizer1a, wxSizerFlags(0).Border(wxALL, 3));
+	dispSizer->Add(dSizer1b, wxSizerFlags(0).Border(wxALL, 3));
 	dispSizer->Add(dSizer2, wxSizerFlags(0).Border(wxALL, 3));
 	dispSizer->Add(dSizer2a, wxSizerFlags(0).Border(wxALL, 3));
 	dispSizer->Add(dSizer3, wxSizerFlags(0).Border(wxALL, 3));
@@ -617,13 +627,16 @@ void ControlsPanel::displaySectionEnable(bool state)
 	Refresh(false);
 }
 
-void ControlsPanel::porositySectionEnable(bool state)
+void ControlsPanel::porositySectionEnable(bool state, bool enable/*=true*/)
 {
-	m_poreSize->Enable(state);
-	m_poreIsFixed->Enable(state);
-	m_poreCuboid->Enable(state);
-	m_poreSpheroid->Enable(state);
-	m_withReplacement->Enable(state);
+	m_porosity->Enable(enable);
+
+	bool mstate = state & enable;
+	m_poreSize->Enable(mstate);
+	m_poreIsFixed->Enable(mstate);
+	m_poreCuboid->Enable(mstate);
+	m_poreSpheroid->Enable(mstate);
+	m_withReplacement->Enable(mstate);
 
 	Refresh(false);
 }
@@ -746,6 +759,10 @@ void ControlsPanel::OnCheckBox(wxCommandEvent& event)
 	if ((checkbox == m_poreIsFixed) || (checkbox == m_withReplacement) || 
 		(checkbox == m_aggregateEnable) || (checkbox == m_replaceEnable))
 	{
+		if (checkbox == m_aggregateEnable)	// Toggle the Porosity control section if Aggregation is toggled
+		{
+			porositySectionEnable((m_params.porosity > 0.0), !checkbox->GetValue());
+		}
 		m_thread = new ProcThread(this, true);	// Launch with preprocessing only
 	}
 	else if (checkbox == m_displayEnable)
@@ -758,6 +775,26 @@ void ControlsPanel::OnCheckBox(wxCommandEvent& event)
 	{
 		refreshDisplay(true);
 	}
+
+	event.Skip(false);
+}
+
+void ControlsPanel::OnComboBox(wxCommandEvent& event)
+{
+	wxComboBox* cmpicker = (wxComboBox*)event.GetEventObject();
+	int colormapIndex = cmpicker->GetCurrentSelection();
+	if (colormapIndex == m_params.colormapIndex)
+		return;
+
+	GlobalGL3dContext->GenerateTextures(colormapIndex);
+	refreshDisplay(true);
+
+	if (m_thread)	// If there is currently a thread return
+		return;
+
+	saveConfig();	// Update the settings file
+
+	m_thread = new ProcThread(this, true);	// Launch with preprocessing only
 
 	event.Skip(false);
 }
@@ -1100,6 +1137,7 @@ void ControlsPanel::getCurrentParams()
 	m_params.outputSaveInfo = m_outputSaveInfo->GetValue();
 	m_params.displayEnable	= m_displayEnable->GetValue();
 	m_params.displayFaces	= m_displayFaces->GetValue();
+	m_params.colormapIndex	= m_colorMap->GetCurrentSelection();
 	m_params.showOutlines	= m_showOutlines->GetValue();
 	m_params.showAxes		= m_showAxes->GetValue();
 	m_params.pauseOnInc		= m_pauseOnInc->GetValue();
@@ -1180,6 +1218,7 @@ void ControlsPanel::setCurrentParams(bool reset/*=true*/)
 	m_outputSaveGrid->SetValue(m_params.outputSaveGrid);
 	m_outputSaveInfo->SetValue(m_params.outputSaveInfo);
 	m_displayEnable->SetValue(m_params.displayEnable);
+	m_colorMap->SetSelection(m_params.colormapIndex);
 	m_displayFaces->SetValue(m_params.displayFaces);
 	m_showOutlines->SetValue(m_params.showOutlines);
 	m_showAxes->SetValue(m_params.showAxes);
@@ -1234,7 +1273,7 @@ bool ControlsPanel::saveConfig()
 #ifdef WANT_INPUT_CONTROL
 	fprintf(fp,"\t<inputctrl file=\"%s\" />\n", m_params.inputFile.c_str());
 #endif //#ifdef WANT_INPUT_CONTROL
-	fprintf(fp,"\t<displayopts enable=\"%d\" faces=\"%d\" outline=\"%d\" axes=\"%d\" pause=\"%d\" save=\"%d\" frames=\"%d\" cubeview=\"%d\" />\n", m_params.displayEnable, m_params.displayFaces, m_params.showOutlines, m_params.showAxes, m_params.pauseOnInc, m_params.saveGif, m_params.saveFrames, m_params.cubeView);
+	fprintf(fp,"\t<displayopts enable=\"%d\" cmindex=\"%d\" faces=\"%d\" outline=\"%d\" axes=\"%d\" pause=\"%d\" save=\"%d\" frames=\"%d\" cubeview=\"%d\" />\n", m_params.displayEnable, m_params.colormapIndex, m_params.displayFaces, m_params.showOutlines, m_params.showAxes, m_params.pauseOnInc, m_params.saveGif, m_params.saveFrames, m_params.cubeView);
 	fprintf(fp,"\t<displayctrl fps=\"%d\" rotangle=\"%.5lf\" zoom=\"%.5lf\" xangle=\"%.5lf\" yangle=\"%.5lf\" zangle=\"%.5lf\" />\n", m_params.fps, m_params.rotationAngle, mParams[3], mParams[0], mParams[1], mParams[2]);
 #ifdef WANT_FRAGMENTATION
 	fprintf(fp, "\t<fragmentctrl enable=\"%d\" discard=\"%d\" animate=\"%d\" hist=\"%d\" enableclass=\"%d\" class=\"%d\" save=\"%d\" fragat=\"%d\" />\n", m_params.enableFrag, m_params.discardFrags, m_params.animateFrags, m_params.histFrags, m_params.enableFragClass, m_params.fragClass, m_params.outputSaveFrags, m_params.fragmentAt);
@@ -1507,6 +1546,10 @@ bool ControlsPanel::loadConfig()
 						{	
 							m_params.displayEnable = std::atol(value.c_str());
 						}
+						else if (name == "cmindex")
+						{
+							m_params.colormapIndex = std::atol(value.c_str());
+						}
 						else if (name == "faces")
 						{	
 							m_params.displayFaces = std::atol(value.c_str());
@@ -1683,7 +1726,7 @@ bool ControlsPanel::prerun(bool is_prerun)
 #endif// #ifdef WANT_FRAGMENTATION
 
 	// Prepare the grid with a porosity level if requested
-	if (m_params.porosity > 0.0)
+	if ((m_params.porosity > 0.0) && !m_params.aggregateEnable)
 	{
 		m_runButton->SetLabel("pause");
 		generatePores();

@@ -11,6 +11,7 @@
 extern ControlsPanel*	GlobalControlsPanel;
 
 GLDisplayContext3D	*GlobalGL3dContext = NULL;
+MapPointer ActiveColorMap = NULL;
 
 	// Create a single device 3D context for the main frame
 	// All subsequent requests will use the single context
@@ -53,13 +54,24 @@ static void CheckGLError()
     }
 }
 
-unsigned char colormap[6][3]= {
+//	Rainbow 
+unsigned char colormap0[6][3]= {
 	{0x00, 0x00, 0xFF},
 	{0x00, 0xCC, 0xCC},
 	{0x00, 0xFF, 0x00},
 	{0xFF, 0xFF, 0x00},
 	{0xFF, 0x80, 0x00},
 	{0xFF, 0x00, 0x00}
+};
+
+//	Matter 
+unsigned char colormap1[6][3] = {
+	{0x2F, 0x0F, 0x3E},
+	{0x73, 0x1A, 0x60},
+	{0xB4, 0x2E, 0x5F},
+	{0xE3, 0x62, 0x53},
+	{0xF6, 0xA7, 0x73},
+	{0xFF, 0xEE, 0xB1}
 };
 
 unsigned char colormap2[6][3] = {
@@ -89,8 +101,63 @@ unsigned char colormap4[6][3] = {
 	{0xff, 0xa6, 0x00}
 };
 
+//#define GENERATE_COLORMAP
+#ifdef GENERATE_COLORMAP
+// Got the matter colormap from ... https://github.com/matplotlib/cmocean/tree/main/cmocean/rgb
+void colormap2colormap()
+{
+	std::string fileName = "C://Users//beast//GitHub//Samurai//Samurai//matter_cm.txt";
+	FILE* fp = fopen(fileName.c_str(), "rb");
+	if (fp == NULL)
+		return;
+	int lineCount = 0;
+	int row = 0;
+	char delims[] = " ,\n";
+	char linebuf[128];
+	while (fgets(linebuf, 128, fp))
+	{
+		if (lineCount++ % 51)
+			continue;
+
+		double dr, dg, db;
+		unsigned char	ir, ig, ib;
+		char* tok = strtok(linebuf, delims);
+		if (tok)
+		{
+			dr = atof(tok);
+			ir = (unsigned char)((round)(dr * 256.0));
+			tok = strtok(NULL, delims);
+			if (tok)
+			{
+				dg = atof(tok);
+				ig = (unsigned char)((round)(dg * 256.0));
+				tok = strtok(NULL, delims);
+				if (tok)
+				{
+					db = atof(tok);
+					ib = (unsigned char)((round)(db * 256.0));
+					colormap[row][0] = ir; colormap[row][1] = ig; colormap[row][2] = ib;
+					++row;
+				}
+			}
+		}
+	}
+	fclose(fp);
+
+	fp = fopen("C://Users//beast//github//Samurai//Samurai//matter_cm_6.txt", "w+");
+	if (fp != NULL)
+	{	for (row = 0; row < 5; row++)
+		{
+			fprintf(fp,"\t{0x%02X, 0x%02X, 0x%02X},\n", colormap[row][0], colormap[row][1], colormap[row][2]);
+		}
+		fprintf(fp, "\t{0x%02X, 0x%02X, 0x%02X}\n", colormap[row][0], colormap[row][1], colormap[row][2]);
+		fclose(fp);
+	}
+}
+#endif //#ifdef GENERATE_COLORMAP
+
 // function to draw the texture for cube faces
-static wxImage DrawCubeFace(int size, unsigned num)
+static wxImage DrawCubeFace(int size, unsigned num, MapPointer colormap)
 {
 //    wxASSERT_MSG( num >= 0 && num <= 5, wxT("invalid face index") );
 
@@ -102,7 +169,7 @@ static wxImage DrawCubeFace(int size, unsigned num)
 	if (noLines)
 		num -= 6;
 
-	unsigned char* color = colormap[num];
+	unsigned char *color = (*colormap)[num];
 	wxBrush brush(wxColour(color[0], color[1], color[2]));
 	dc.SetBackground(brush);
 	dc.Clear();
@@ -121,8 +188,51 @@ static wxImage DrawCubeFace(int size, unsigned num)
     return bmp.ConvertToImage();
 }
 
+void GLDisplayContext3D::GenerateTextures(int cmapIndex/*=-1*/)
+{
+	if (cmapIndex != -1)
+		glDeleteTextures(WXSIZEOF(m_textures), m_textures);
+
+	// create the textures to use for cube sides: they will be reused by all
+	// canvases (which is probably not critical in the case of simple textures
+	// we use here but could be really important for a real application where
+	// each texture could take many megabytes)
+	glGenTextures(WXSIZEOF(m_textures), m_textures);
+
+	if ((cmapIndex == -1) || (cmapIndex >= N_COLORMAPS))
+		cmapIndex = 0;
+	MapPointer colormap = m_cmaps[cmapIndex];
+	ActiveColorMap = colormap;
+
+	for (unsigned i = 0; i < WXSIZEOF(m_textures); i++)
+	{
+		glBindTexture(GL_TEXTURE_2D, m_textures[i]);
+
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+
+		const wxImage img(DrawCubeFace(16, i, colormap));
+
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.GetWidth(), img.GetHeight(),
+			0, GL_RGB, GL_UNSIGNED_BYTE, img.GetData());
+	}
+}
+
 GLDisplayContext3D::GLDisplayContext3D(wxGLCanvas *canvas) : wxGLContext(canvas)
 {
+	// Load the colormap pointers
+
+	m_cmaps[0] = &colormap0;
+	m_cmaps[1] = &colormap1;
+	m_cmaps[2] = &colormap2;
+	m_cmaps[3] = &colormap3;
+	m_cmaps[4] = &colormap4;
+
     SetCurrent(*canvas);
 
 	    // set up the parameters we want to use
@@ -142,28 +252,11 @@ GLDisplayContext3D::GLDisplayContext3D(wxGLCanvas *canvas) : wxGLContext(canvas)
     glFrustum(-1.0f, 1.0f, -1.0f, 1.0f, 8.0f, 10000.0f);
 	glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
 
-    // create the textures to use for cube sides: they will be reused by all
-    // canvases (which is probably not critical in the case of simple textures
-    // we use here but could be really important for a real application where
-    // each texture could take many megabytes)
-    glGenTextures(WXSIZEOF(m_textures), m_textures);
+#ifdef GENERATE_COLORMAP
+	colormap2colormap();	// If you want to generate a different colormap (see routine above)
+#endif //#ifdef GENERATE_COLORMAP
 
-    for ( unsigned i = 0; i < WXSIZEOF(m_textures); i++ )
-    {
-        glBindTexture(GL_TEXTURE_2D, m_textures[i]);
-
-        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-        const wxImage img(DrawCubeFace(16, i));
-
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.GetWidth(), img.GetHeight(),
-                     0, GL_RGB, GL_UNSIGNED_BYTE, img.GetData());
-    }
+	GenerateTextures();
 
 	m_lastIndex = -1;
 	m_lastZdim = 0;

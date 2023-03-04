@@ -757,7 +757,7 @@ Cube* MultiCube::insertCube(int x, int y, int z, bool doUpdate/*=false*/)
 			++OutOfBounds;
 			return(NULL);
 		}
-		if ((x >= m_params.xdim) || (y >= m_params.ydim) || (z >= m_params.zdim))
+		if ((x >= (int)m_params.xdim) || (y >= (int)m_params.ydim) || (z >= (int)m_params.zdim))
 		{
 			++OutOfBounds;
 			return(NULL);
@@ -1011,8 +1011,8 @@ void MultiCube::replaceCubes(int nCubes, bool excludeSurface/*=true*/)
 		else
 		{
 			++nCubes;	// Replacement failed, try again
-			message = format("Cube %d replacement failed - trying again\n", nCubes);
-			sendMessage(message);
+			//message = format("Cube %d replacement failed - trying again\n", nCubes);
+			//sendMessage(message);
 		}
 	}
 

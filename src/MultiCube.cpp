@@ -78,7 +78,7 @@ MultiCube::MultiCube(CubeParams& params, bool* doneFlag, char* fname/*=NULL*/) :
 	dhist.assign(6, 0);
 #endif //#ifdef WANT_FRAGMENTATION
 
-//#define VERIFY_SOURCE	// Uncomment if you wish the PRNG seed to always be the same. (Useful for verifing model after code changes.)
+#define VERIFY_SOURCE	// Uncomment if you wish the PRNG seed to always be the same. (Useful for verifing model after code changes.)
 #ifdef VERIFY_SOURCE
 	xsrand(30111);		// Seed the pseudo-random number generator with fixed value
 #else
@@ -126,7 +126,7 @@ void MultiCube::loadDefaults(CubeParams& params)
 #ifdef RANDOM_REMOVAL
 	params.naiveRemoval = false;
 #endif //#ifdef RANDOM_REMOVAL
-	params.aggregateEnable = true;
+	params.aggregateEnable = false;
 	params.particleSize = 20;
 	params.replaceEnable= true;
 	params.outputInc	= 0.05;
@@ -166,6 +166,7 @@ void MultiCube::loadDefaults(CubeParams& params)
 	params.saveFrames	= false;
 	params.fps			= 30;
 	params.cubeView		= true;
+	params.rotationAngle= 0.0;
 #endif
 }
 
@@ -2345,13 +2346,23 @@ bool Aggregate::validateParticle(point3d p, double pMag, int index)
 	else
 	{
 		// Create a vector from container center to test point
-		point3d np;
-		np.x = m_xr - p.x;
-		np.y = m_yr - p.y;
-		np.z = m_zr - p.z;
-		double mag = sqrt((np.x * np.x) + (np.y * np.y) + (np.z * np.z));
+		//point3d np;
+		//np.x = m_xr - p.x;
+		//np.y = m_yr - p.y;
+		//np.z = m_zr - p.z;
+		//double mag = sqrt((np.x * np.x) + (np.y * np.y) + (np.z * np.z));
 
-		condition = (mag < pMag);	// Verify that the sub-particle will fit inside the container
+		//condition = (mag < pMag);	// Verify that the sub-particle will fit inside the container
+
+		double rx = m_xr - m_pr;
+		double ry = m_yr - m_pr;
+		double rz = m_zr - m_pr;
+		double x1 = ((p.x - m_xr) * (p.x - m_xr)) / (rx * rx);
+		double y1 = ((p.y - m_yr) * (p.y - m_yr)) / (ry * ry);
+		double z1 = ((p.z - m_zr) * (p.z - m_zr)) / (rz * rz);
+
+		double sum = x1 + y1 + z1;
+		condition = sum <= 1;
 	}
 
 	if (condition)
@@ -2409,7 +2420,6 @@ void Aggregate::fractalGeneration(pointVect& displayPoints, point3d cOffset, dou
 	aggregate.generateParticles(false);
 	pointVect& points = aggregate.getParticles();
 
-	double new_r = std::cbrt(aggregate.m_particleVolume / SPHERE_SCALAR);
 	double expected = (aggregate.m_containerVolume / aggregate.m_particleVolume);
 	double new_pv = aggregate.m_particleVolume / expected;
 	double new_pr = std::cbrt(new_pv / SPHERE_SCALAR);
@@ -2421,7 +2431,6 @@ void Aggregate::fractalGeneration(pointVect& displayPoints, point3d cOffset, dou
 		double xr = xd / 2.0;
 		double yr = yd / 2.0;
 		double zr = zd / 2.0;
-		double pr = pd / 2.0;
 
 		//int nParticles = 0;
 		pointVect::iterator it = points.begin();

@@ -52,7 +52,7 @@ private:
 	int m_last_xi, m_last_yi;
 	int m_last_index;
 
-	bool	m_save, m_force;
+	bool	m_force;
 
 	GLines	m_lines;
 

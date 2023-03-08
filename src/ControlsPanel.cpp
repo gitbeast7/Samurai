@@ -1793,17 +1793,26 @@ void ControlsPanel::run(bool is_prerun)
 
 	if (m_params.outputSave)
 	{
-		sprintf(filename, "%s\\%sSA%dx%dx%dp%ds%d.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity*100+.5), m_params.particleSize);
+		if (m_params.aggregateEnable)
+			sprintf(filename, "%s\\%sSA%dx%dx%dp%ds%d.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity*100+.5), m_params.particleSize);
+		else
+			sprintf(filename, "%s\\%sSA%dx%dx%dp%ds.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5));
 		m_grid->openSAData(filename);		// Open volume vs surface area data file
 	}
 	if (m_params.outputSaveGrid)
 	{
-		sprintf(filename, "%s\\%sGrid%dx%dx%dp%ds%d_0.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5), m_params.particleSize);
+		if (m_params.aggregateEnable)
+			sprintf(filename, "%s\\%sGrid%dx%dx%dp%ds%d_0.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5), m_params.particleSize);
+		else
+			sprintf(filename, "%s\\%sGrid%dx%dx%dp%ds_0.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5));
 		m_grid->outputGrid(filename);	// Dump x,y,z data for doing 3D cube plots
 	}
 	if (m_params.outputSaveInfo)
 	{
-		sprintf(filename, "%s\\%sInfo%dx%dx%dp%ds%d.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5), m_params.particleSize);
+		if (m_params.aggregateEnable)
+			sprintf(filename, "%s\\%sInfo%dx%dx%dp%ds%d.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5), m_params.particleSize);
+		else
+			sprintf(filename, "%s\\%sInfo%dx%dx%dp%ds.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5));
 		m_grid->outputInfo(filename, m_run_count);	// Save run information bookkeeping
 	}
 
@@ -1851,7 +1860,11 @@ void ControlsPanel::run(bool is_prerun)
 
 		if (m_params.outputSaveGrid)
 		{
-			sprintf(filename, "%s\\%sGrid%dx%dx%dp%ds%d_%d.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5), m_params.particleSize, (int)(Threshhold * 100 + .5));
+			if (m_params.aggregateEnable)
+				sprintf(filename, "%s\\%sGrid%dx%dx%dp%ds%d_%d.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5), m_params.particleSize, (int)(Threshhold * 100 + .5));
+			else
+				sprintf(filename, "%s\\%sGrid%dx%dx%dp%ds_%d.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5), (int)(Threshhold * 100 + .5));
+
 			m_grid->outputGrid(filename);	// Dump info for doing 3D cube plots
 		}
 
@@ -1920,7 +1933,11 @@ void ControlsPanel::run(bool is_prerun)
 #endif// #ifdef WANT_FRAGMENTATION
 	if (m_params.outputSaveGrid)
 	{
-		sprintf(filename, "%s\\%sGrid%dx%dx%dp%ds%d_%d.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5), m_params.particleSize, (int)(Threshhold * 100 + .5));
+		if (m_params.aggregateEnable)
+			sprintf(filename, "%s\\%sGrid%dx%dx%dp%ds%d_%d.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5), m_params.particleSize, (int)(Threshhold * 100 + .5));
+		else
+			sprintf(filename, "%s\\%sGrid%dx%dx%dp%ds_%d.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5), (int)(Threshhold * 100 + .5));
+
 		m_grid->outputGrid(filename);	// Dump info for doing 3D cube plots
 	}
 

@@ -29,8 +29,6 @@ FrameStatusBar::~FrameStatusBar()
 
 void FrameStatusBar::OnSize(wxSizeEvent& event)
 {
-	int totsize = 0;
-
 	wxSize size = GetClientSize();
     wxSize gaugeSize = mGauge->GetSize();
 	gaugeSize.x += 16;	// Pad

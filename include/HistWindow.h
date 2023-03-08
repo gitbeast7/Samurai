@@ -39,7 +39,7 @@ private:
 
 	int m_last_yi;
 
-	bool	m_save, m_force;
+	bool	m_force;
 
 	int		m_snapCount;
 };

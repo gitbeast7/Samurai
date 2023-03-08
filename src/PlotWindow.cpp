@@ -251,7 +251,6 @@ void PlotWindow::plotSaved(wxDC& dc, wxSize& sz)
 	while (it != m_lines.end())
 	{
 		GPoints& gpts = *it++;
-		gPoint& gp1 = gpts[0];
 
 		double x = (gpts[0].x - m_xmin) * m_xscl;
 		double y = (gpts[0].y - m_ymin) * m_yscl;
@@ -319,7 +318,6 @@ bool PlotWindow::minmaxSaved()
 	while (it != m_lines.end())
 	{
 		GPoints& gpts = *it++;
-		gPoint& gp1 = gpts[0];
 
 		int npts = (int)gpts.size();
 		for (int i = 0; i < npts; i++)

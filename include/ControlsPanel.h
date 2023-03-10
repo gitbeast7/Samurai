@@ -153,7 +153,6 @@ private:
 	wxNotebook*		m_notebook;
 	ProcThread*		m_thread;
 	bool			m_done;
-	bool			m_isRunning;
 	bool			m_need_prerun;
 	bool			m_terminating;
 	bool			m_paused;

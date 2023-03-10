@@ -1662,11 +1662,11 @@ int MultiCube::getExposedFaces(Cube* cube)
 uint64_t MultiCube::exposedFaceCount()
 {
 	uint64_t exposed = 0;
-	uint64_t testexposed = 0;
+	//uint64_t testexposed = 0;
 	CubePtrs::iterator it = cubeList.begin();
 	while (it != cubeList.end())
 	{
-		testexposed += exposedFaceCount(*it);
+		//testexposed += exposedFaceCount(*it);
 		exposed += getExposedFaces(*it++);
 	}
 	return(exposed);
@@ -2179,7 +2179,7 @@ std::string format(const char *fmt, ...)
 bool MultiCube::produceParticles(double& threshhold, int* progress)
 {
 	Dim_t cubesToRemove = (Dim_t)round(m_initialVolume * m_params.porosity);
-	int poreSize = getPoreSize(cubesToRemove);	// Get initial pore dimensions
+	getPoreSize(cubesToRemove);		// Get initial pore dimensions
 	m_cubesRemoved = m_initialVolume - (Dim_t)cubeList.size();
 	while ((m_cubesRemoved < cubesToRemove) && !testDone())
 	{

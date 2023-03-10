@@ -2,10 +2,10 @@
 <settings>
 	<app w="880" h="820" x="0" y="0" sashpos="623" />
 	<object isCuboid="1" />
-	<dimensions x="50" y="50" z="50" />
+	<dimensions x="500" y="500" z="500" />
 	<porectrl porosity="0.00000" size="3" fixed="1" isCuboid="1" replace="1" />
 	<aggctrl enable="0" size="20" replace="1"/>
-	<outputctrl inc="0.05000" end="1.00000" runs="1" subsamp="1" nsamps="0" dir="OutputDir" save="0" grid="0" info="1" />
-	<displayopts enable="1" cmindex="0" faces="1" outline="0" axes="0" pause="0" save="0" frames="0" cubeview="1" />
-	<displayctrl fps="30" rotangle="0.00000" zoom="0.00000" xangle="0.00000" yangle="0.00000" zangle="0.00000" />
+	<outputctrl inc="1.00000" end="1.00000" runs="1" subsamp="1" nsamps="0" dir="OutputDir" save="0" grid="0" info="0" />
+	<displayopts enable="0" cmindex="0" faces="1" outline="0" axes="0" pause="0" save="0" frames="0" cubeview="1" />
+	<displayctrl fps="30" rotangle="0.00000" zoom="0.00000" xangle="-5.00000" yangle="0.00000" zangle="2.00000" />
 </settings>

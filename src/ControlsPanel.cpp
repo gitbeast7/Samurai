@@ -1260,21 +1260,21 @@ bool ControlsPanel::saveConfig()
 
 	fprintf(fp,"<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n");
 	fprintf(fp,"<settings>\n");
-	fprintf(fp, "\t<app w=\"%d\" h=\"%d\" x=\"%d\" y=\"%d\" sashpos=\"%d\" />\n", m_params.xsize, m_params.ysize, m_params.xpos, m_params.ypos, m_params.sashpos);
+	fprintf(fp, "\t<app w=\"%lu\" h=\"%lu\" x=\"%lu\" y=\"%lu\" sashpos=\"%lu\" />\n", m_params.xsize, m_params.ysize, m_params.xpos, m_params.ypos, m_params.sashpos);
 	fprintf(fp,"\t<object isCuboid=\"%d\" />\n", m_params.cuboid);
-	fprintf(fp,"\t<dimensions x=\"%d\" y=\"%d\" z=\"%d\" />\n", m_params.xdim, m_params.ydim, m_params.zdim);
+	fprintf(fp,"\t<dimensions x=\"%lu\" y=\"%lu\" z=\"%lu\" />\n", m_params.xdim, m_params.ydim, m_params.zdim);
 #ifdef RANDOM_REMOVAL
 	fprintf(fp,"\t<porectrl porosity=\"%.5lf\" size=\"%d\" fixed=\"%d\" isCuboid=\"%d\" replace=\"%d\" naive=\"%d\" />\n", m_params.porosity, m_params.poreSize, m_params.poreIsFixed, m_params.poreIsCuboid, m_params.withReplacement, m_params.naiveRemoval);
 #else
-	fprintf(fp,"\t<porectrl porosity=\"%.5lf\" size=\"%d\" fixed=\"%d\" isCuboid=\"%d\" replace=\"%d\" />\n", m_params.porosity, m_params.poreSize, m_params.poreIsFixed, m_params.poreIsCuboid, m_params.withReplacement);
+	fprintf(fp,"\t<porectrl porosity=\"%.5lf\" size=\"%lu\" fixed=\"%d\" isCuboid=\"%d\" replace=\"%d\" />\n", m_params.porosity, m_params.poreSize, m_params.poreIsFixed, m_params.poreIsCuboid, m_params.withReplacement);
 #endif //#ifdef RANDOM_REMOVAL
-	fprintf(fp, "\t<aggctrl enable=\"%d\" size=\"%d\" replace=\"%d\"/>\n", m_params.aggregateEnable, m_params.particleSize, m_params.replaceEnable);
-	fprintf(fp,"\t<outputctrl inc=\"%.5lf\" end=\"%.5lf\" runs=\"%d\" subsamp=\"%d\" nsamps=\"%d\" dir=\"%s\" save=\"%d\" grid=\"%d\" info=\"%d\" />\n", m_params.outputInc, m_params.outputEnd, m_params.nRuns, m_params.outputSubsamp, m_params.outputNSamps, m_params.outputDir.c_str(), m_params.outputSave, m_params.outputSaveGrid, m_params.outputSaveInfo);
+	fprintf(fp, "\t<aggctrl enable=\"%d\" size=\"%lu\" replace=\"%d\"/>\n", m_params.aggregateEnable, m_params.particleSize, m_params.replaceEnable);
+	fprintf(fp,"\t<outputctrl inc=\"%.5lf\" end=\"%.5lf\" runs=\"%lu\" subsamp=\"%lu\" nsamps=\"%lu\" dir=\"%s\" save=\"%d\" grid=\"%d\" info=\"%d\" />\n", m_params.outputInc, m_params.outputEnd, m_params.nRuns, m_params.outputSubsamp, m_params.outputNSamps, m_params.outputDir.c_str(), m_params.outputSave, m_params.outputSaveGrid, m_params.outputSaveInfo);
 #ifdef WANT_INPUT_CONTROL
 	fprintf(fp,"\t<inputctrl file=\"%s\" />\n", m_params.inputFile.c_str());
 #endif //#ifdef WANT_INPUT_CONTROL
-	fprintf(fp,"\t<displayopts enable=\"%d\" cmindex=\"%d\" faces=\"%d\" outline=\"%d\" axes=\"%d\" pause=\"%d\" save=\"%d\" frames=\"%d\" cubeview=\"%d\" />\n", m_params.displayEnable, m_params.colormapIndex, m_params.displayFaces, m_params.showOutlines, m_params.showAxes, m_params.pauseOnInc, m_params.saveGif, m_params.saveFrames, m_params.cubeView);
-	fprintf(fp,"\t<displayctrl fps=\"%d\" rotangle=\"%.5lf\" zoom=\"%.5lf\" xangle=\"%.5lf\" yangle=\"%.5lf\" zangle=\"%.5lf\" />\n", m_params.fps, m_params.rotationAngle, mParams[3], mParams[0], mParams[1], mParams[2]);
+	fprintf(fp,"\t<displayopts enable=\"%d\" cmindex=\"%lu\" faces=\"%d\" outline=\"%d\" axes=\"%d\" pause=\"%d\" save=\"%d\" frames=\"%d\" cubeview=\"%d\" />\n", m_params.displayEnable, m_params.colormapIndex, m_params.displayFaces, m_params.showOutlines, m_params.showAxes, m_params.pauseOnInc, m_params.saveGif, m_params.saveFrames, m_params.cubeView);
+	fprintf(fp,"\t<displayctrl fps=\"%lu\" rotangle=\"%.5lf\" zoom=\"%.5lf\" xangle=\"%.5lf\" yangle=\"%.5lf\" zangle=\"%.5lf\" />\n", m_params.fps, m_params.rotationAngle, mParams[3], mParams[0], mParams[1], mParams[2]);
 #ifdef WANT_FRAGMENTATION
 	fprintf(fp, "\t<fragmentctrl enable=\"%d\" discard=\"%d\" animate=\"%d\" hist=\"%d\" enableclass=\"%d\" class=\"%d\" save=\"%d\" fragat=\"%d\" />\n", m_params.enableFrag, m_params.discardFrags, m_params.animateFrags, m_params.histFrags, m_params.enableFragClass, m_params.fragClass, m_params.outputSaveFrags, m_params.fragmentAt);
 #endif //#ifdef WANT_FRAGMENTATION
@@ -1794,25 +1794,25 @@ void ControlsPanel::run(bool is_prerun)
 	if (m_params.outputSave)
 	{
 		if (m_params.aggregateEnable)
-			sprintf(filename, "%s\\%sSA%dx%dx%dp%ds%d.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity*100+.5), m_params.particleSize);
+			sprintf(filename, "%s\\%sSA%lux%lux%lup%ds%lu.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity*100+.5), m_params.particleSize);
 		else
-			sprintf(filename, "%s\\%sSA%dx%dx%dp%ds.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5));
+			sprintf(filename, "%s\\%sSA%lux%lux%lup%ds.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5));
 		m_grid->openSAData(filename);		// Open volume vs surface area data file
 	}
 	if (m_params.outputSaveGrid)
 	{
 		if (m_params.aggregateEnable)
-			sprintf(filename, "%s\\%sGrid%dx%dx%dp%ds%d_0.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5), m_params.particleSize);
+			sprintf(filename, "%s\\%sGrid%lux%lux%lup%ds%lu_0.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5), m_params.particleSize);
 		else
-			sprintf(filename, "%s\\%sGrid%dx%dx%dp%ds_0.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5));
+			sprintf(filename, "%s\\%sGrid%lux%lux%lup%ds_0.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5));
 		m_grid->outputGrid(filename);	// Dump x,y,z data for doing 3D cube plots
 	}
 	if (m_params.outputSaveInfo)
 	{
 		if (m_params.aggregateEnable)
-			sprintf(filename, "%s\\%sInfo%dx%dx%dp%ds%d.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5), m_params.particleSize);
+			sprintf(filename, "%s\\%sInfo%lux%lux%lup%ds%lu.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5), m_params.particleSize);
 		else
-			sprintf(filename, "%s\\%sInfo%dx%dx%dp%ds.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5));
+			sprintf(filename, "%s\\%sInfo%lux%lux%lup%ds.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5));
 		m_grid->outputInfo(filename, m_run_count);	// Save run information bookkeeping
 	}
 
@@ -1824,7 +1824,9 @@ void ControlsPanel::run(bool is_prerun)
 	double Threshhold = m_params.outputInc;
 	startProgress();
 	int progress = 0, last_progress = -1;
+#ifdef WANT_FRAGMENTATION
 	int fragments = 0;
+#endif// #ifdef WANT_FRAGMENTATION
 
 	// Start timing now
 	std::chrono::system_clock::time_point before = std::chrono::system_clock::now();
@@ -1861,9 +1863,9 @@ void ControlsPanel::run(bool is_prerun)
 		if (m_params.outputSaveGrid)
 		{
 			if (m_params.aggregateEnable)
-				sprintf(filename, "%s\\%sGrid%dx%dx%dp%ds%d_%d.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5), m_params.particleSize, (int)(Threshhold * 100 + .5));
+				sprintf(filename, "%s\\%sGrid%lux%lux%lup%ds%lu_%d.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5), m_params.particleSize, (int)(Threshhold * 100 + .5));
 			else
-				sprintf(filename, "%s\\%sGrid%dx%dx%dp%ds_%d.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5), (int)(Threshhold * 100 + .5));
+				sprintf(filename, "%s\\%sGrid%lux%lux%lup%ds_%d.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5), (int)(Threshhold * 100 + .5));
 
 			m_grid->outputGrid(filename);	// Dump info for doing 3D cube plots
 		}
@@ -1926,7 +1928,7 @@ void ControlsPanel::run(bool is_prerun)
 		
 		if (m_params.outputSaveFrags)
 		{
-			sprintf(filename, "%s\\%sFrags%dx%dx%d_%d.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(Threshhold * 100 + .5));
+			sprintf(filename, "%s\\%sFrags%lux%lux%lu_%d.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(Threshhold * 100 + .5));
 			m_grid->outputFragments(filename);
 		}
 	}
@@ -1934,9 +1936,9 @@ void ControlsPanel::run(bool is_prerun)
 	if (m_params.outputSaveGrid)
 	{
 		if (m_params.aggregateEnable)
-			sprintf(filename, "%s\\%sGrid%dx%dx%dp%ds%d_%d.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5), m_params.particleSize, (int)(Threshhold * 100 + .5));
+			sprintf(filename, "%s\\%sGrid%lux%lux%lup%ds%lu_%d.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5), m_params.particleSize, (int)(Threshhold * 100 + .5));
 		else
-			sprintf(filename, "%s\\%sGrid%dx%dx%dp%ds_%d.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5), (int)(Threshhold * 100 + .5));
+			sprintf(filename, "%s\\%sGrid%lux%lux%lup%ds_%d.txt", outputDir.c_str(), m_params.cuboid ? "Cuboid" : "Ellipsoid", m_params.xdim, m_params.ydim, m_params.zdim, (int)(m_params.porosity * 100 + .5), (int)(Threshhold * 100 + .5));
 
 		m_grid->outputGrid(filename);	// Dump info for doing 3D cube plots
 	}

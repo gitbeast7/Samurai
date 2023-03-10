@@ -78,9 +78,11 @@ MultiCube::MultiCube(CubeParams& params, bool* doneFlag, char* fname/*=NULL*/) :
 	dhist.assign(6, 0);
 #endif //#ifdef WANT_FRAGMENTATION
 
-#define VERIFY_SOURCE	// Uncomment if you wish the PRNG seed to always be the same. (Useful for verifing model after code changes.)
+//#define VERIFY_SOURCE	// Uncomment if you wish the PRNG seed to always be the same. (Useful for verifing model after code changes.)
 #ifdef VERIFY_SOURCE
 	xsrand(30111);		// Seed the pseudo-random number generator with fixed value
+	std::string message = format("Warning: PRNG Seeded with a FIXED value. All runs will be identical!\n");
+	sendMessage(message);
 #else
 	LARGE_INTEGER seed;
 	QueryPerformanceCounter(&seed);

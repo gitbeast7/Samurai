@@ -13,3 +13,14 @@
 *.ipdb
 *.idb
 *.suo
+/.vs/Samurai/v17/.wsuo
+/.vs/VSWorkspaceState.json
+/Samurai/.vs/Samurai/FileContentIndex/a4417450-a4c6-4092-bf7a-3db14ebfd102.vsidx
+/Samurai/.vs/Samurai/FileContentIndex/read.lock
+/Samurai/.vs/Samurai/v17/fileList.bin
+/Samurai/x64/Release/Samurai.vcxproj.FileListAbsolute.txt
+/Samurai/x64/Release/Samurai.exe.recipe
+/Samurai/x64/Release/Samurai.exe
+/Samurai/x64/Debug/Samurai.vcxproj.FileListAbsolute.txt
+/Samurai/x64/Debug/Samurai.exe.recipe
+/Samurai/x64/Debug/Samurai.exe

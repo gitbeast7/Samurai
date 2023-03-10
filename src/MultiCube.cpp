@@ -2069,7 +2069,7 @@ bool MultiCube::consume(double& threshhold, int* progress/*=NULL*/)
 			pInfo.nExposedFaces = surfaceArea;
 #ifdef RANDOM_REMOVAL
 			pInfo.nTotalExposedFaces = (fastRemove && !m_params.naiveRemoval) ? surfaceArea : exposedFaceCount();
-#endif #ifdef RANDOM_REMOVAL
+#endif //#ifdef RANDOM_REMOVAL
 			saData.push_back(pInfo);
 			m_lastRemoved = m_cubesRemoved;
 		}
